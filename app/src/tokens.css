@@ -1,0 +1,280 @@
+/* FocusLock — Scriptorium design tokens */
+
+:root {
+  --ink: #14120D;
+  --ink-2: #211D15;
+  --ink-3: #3A332A;
+  --ink-4: #5A5142;
+  --ink-mute: #7A715E;
+
+  --parchment: #EEEAE0;
+  --paper: #F4EFE3;
+  --vellum: #FAF7EE;
+  --bone: #FDFBF5;
+
+  --stone: #B8B2A2;
+  --stone-soft: #D3CDBD;
+  --stone-line: #E2DCCC;
+
+  --bronze: #9B6B2B;
+  --bronze-soft: #B68A48;
+  --bronze-deep: #6E4A1A;
+  --crimson: #7A2E26;
+  --moss: #4F5B41;
+
+  --f-serif: "Newsreader", "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --f-sans: "Geist", "Söhne", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --ease: cubic-bezier(.2, .7, .3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: #E9E3D4;
+  font-family: var(--f-sans);
+  color: var(--ink);
+}
+
+/* ── Keyframe animations ── */
+
+@keyframes fl-pulse {
+  0%, 100% { opacity: .25; }
+  50% { opacity: .85; }
+}
+
+@keyframes fl-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fl-flash-success {
+  0% { background: var(--vellum); }
+  30% { background: #E7EDD9; }
+  100% { background: var(--vellum); }
+}
+
+@keyframes fl-pop {
+  0% { transform: scale(.94); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* ── OTP ── */
+
+.fl-otp {
+  display: flex;
+  gap: 10px;
+}
+
+.fl-otp .d {
+  width: 52px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bone);
+  border: 1px solid var(--stone-line);
+  border-bottom: 2px solid var(--ink-3);
+  font-family: var(--f-mono);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink);
+  transition: all .15s var(--ease);
+}
+
+.fl-otp .d.filled { border-bottom-color: var(--bronze); }
+
+.fl-otp .d.active {
+  border-color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+.fl-otp.error .d {
+  border-color: var(--crimson);
+  color: var(--crimson);
+  animation: shake .42s var(--ease);
+}
+
+.fl-otp.success .d {
+  border-color: var(--moss);
+  color: var(--moss);
+}
+
+/* ── Margin rule ── */
+
+.fl-margin-rule {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--crimson) 12%, var(--crimson) 88%, transparent);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ── Tick bar ── */
+
+.fl-tick {
+  display: flex;
+  gap: 2px;
+  align-items: stretch;
+  height: 6px;
+}
+
+.fl-tick i {
+  flex: 1;
+  background: var(--stone-line);
+}
+
+.fl-tick i.on {
+  background: var(--ink);
+}
+
+/* ── Hairline rules ── */
+
+.fl-rule {
+  height: 1px;
+  background: var(--stone-line);
+  border: 0;
+  margin: 0;
+}
+
+.fl-rule-ink {
+  height: 1px;
+  background: var(--ink);
+  border: 0;
+  margin: 0;
+}
+
+/* ── Type utilities ── */
+
+.fl-serif { font-family: var(--f-serif); font-weight: 400; }
+.fl-serif-it { font-family: var(--f-serif); font-style: italic; font-weight: 400; }
+.fl-mono { font-family: var(--f-mono); font-feature-settings: "tnum"; }
+
+.fl-eyebrow {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-mute);
+}
+
+/* ── Buttons ── */
+
+.fl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  background: var(--ink);
+  color: var(--vellum);
+  border: 0;
+  font-family: var(--f-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all .15s var(--ease);
+}
+
+.fl-btn:hover { background: var(--ink-2); }
+
+.fl-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--stone-line);
+}
+
+.fl-btn--ghost:hover { border-color: var(--ink); background: transparent; }
+
+.fl-btn--quiet {
+  background: transparent;
+  color: var(--ink-mute);
+  height: 36px;
+  padding: 0;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--stone);
+  font-family: var(--f-sans);
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all .15s var(--ease);
+}
+
+.fl-btn--quiet:hover { color: var(--ink); text-decoration-color: var(--ink); }
+
+.fl-btn--block { width: 100%; }
+
+/* ── Canvas nav ── */
+
+.canvas-nav {
+  background: var(--ink);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.canvas-nav a {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--stone);
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  transition: all .15s var(--ease);
+}
+
+.canvas-nav a:hover,
+.canvas-nav a.active {
+  color: var(--vellum);
+  border-color: var(--stone);
+}
+
+.canvas-section {
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.canvas-label {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}

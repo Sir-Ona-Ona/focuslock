@@ -1,0 +1,197 @@
+/* FocusLock — Scriptorium tokens */
+
+:root {
+  /* Ink scale (warm near-black) */
+  --ink: #14120D;
+  --ink-2: #211D15;
+  --ink-3: #3A332A;
+  --ink-4: #5A5142;
+  --ink-mute: #7A715E;
+
+  /* Parchment scale */
+  --parchment: #EEEAE0;
+  --paper: #F4EFE3;
+  --vellum: #FAF7EE;
+  --bone: #FDFBF5;
+
+  /* Stone (mid-greys) */
+  --stone: #B8B2A2;
+  --stone-soft: #D3CDBD;
+  --stone-line: #E2DCCC;
+
+  /* Accents — used SPARINGLY */
+  --bronze: #9B6B2B;
+  --bronze-soft: #B68A48;
+  --bronze-deep: #6E4A1A;
+  --crimson: #7A2E26;
+  --moss: #4F5B41;
+
+  /* Type */
+  --f-serif: "Newsreader", "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --f-sans: "Geist", "Söhne", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Motion */
+  --ease: cubic-bezier(.2,.7,.3,1);
+}
+
+/* Canvas surface override — warm parchment instead of default gray */
+body { background: #E9E3D4; }
+
+/* Reset within designs */
+.fl-screen, .fl-screen * {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+}
+
+.fl-screen {
+  font-family: var(--f-sans);
+  color: var(--ink);
+  background: var(--vellum);
+}
+
+/* Type utilities */
+.fl-serif { font-family: var(--f-serif); font-weight: 400; }
+.fl-serif-it { font-family: var(--f-serif); font-style: italic; font-weight: 400; }
+.fl-mono { font-family: var(--f-mono); font-feature-settings: "tnum"; }
+.fl-eyebrow {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-mute);
+}
+.fl-eyebrow-line {
+  display: flex; align-items: center; gap: 12px;
+}
+.fl-eyebrow-line::before, .fl-eyebrow-line::after {
+  content: ""; flex: 1; height: 1px; background: var(--stone-line);
+}
+
+/* The seal — bronze wax-stamp circle used as the brand mark */
+.fl-seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bronze);
+  color: var(--vellum);
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), inset 0 -2px 4px rgba(0,0,0,.22);
+  letter-spacing: -0.02em;
+}
+.fl-seal::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,.25);
+  pointer-events: none;
+}
+.fl-seal { position: relative; }
+
+/* Hairline rules */
+.fl-rule { height: 1px; background: var(--stone-line); border: 0; }
+.fl-rule-ink { height: 1px; background: var(--ink); border: 0; }
+.fl-rule-double {
+  height: 4px;
+  border: 0;
+  background:
+    linear-gradient(var(--ink), var(--ink)) top/100% 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) bottom/100% 1px no-repeat;
+}
+
+/* OTP digit boxes */
+.fl-otp { display: flex; gap: 10px; }
+.fl-otp .d {
+  width: 52px; height: 64px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bone);
+  border: 1px solid var(--stone-line);
+  border-bottom: 2px solid var(--ink-3);
+  font-family: var(--f-mono);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink);
+  transition: all .15s var(--ease);
+}
+.fl-otp .d.filled { border-bottom-color: var(--bronze); }
+.fl-otp .d.active {
+  border-color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+.fl-otp.error .d {
+  border-color: var(--crimson);
+  color: var(--crimson);
+  animation: shake .42s var(--ease);
+}
+.fl-otp.success .d {
+  border-color: var(--moss);
+  color: var(--moss);
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* Button — primary uses ink, not bronze; bronze reserved for the seal */
+.fl-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; padding: 0 22px;
+  background: var(--ink);
+  color: var(--vellum);
+  border: 0;
+  font-family: var(--f-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all .15s var(--ease);
+}
+.fl-btn:hover { background: var(--ink-2); }
+.fl-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--stone-line);
+}
+.fl-btn--ghost:hover { border-color: var(--ink); background: transparent; }
+.fl-btn--quiet {
+  background: transparent;
+  color: var(--ink-mute);
+  height: 36px; padding: 0 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--stone);
+}
+.fl-btn--quiet:hover { color: var(--ink); text-decoration-color: var(--ink); }
+.fl-btn--block { width: 100%; }
+
+/* Card */
+.fl-card {
+  background: var(--vellum);
+  border: 1px solid var(--stone-line);
+}
+
+/* Tick countdown bar */
+.fl-tick {
+  display: flex; gap: 2px; align-items: stretch; height: 6px;
+}
+.fl-tick i {
+  flex: 1; background: var(--stone-line);
+}
+.fl-tick i.on { background: var(--ink); }
+
+/* Manuscript margin — used on lock screen to reinforce "page" feeling */
+.fl-margin-rule {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--crimson) 12%, var(--crimson) 88%, transparent);
+  opacity: 0.45;
+}
