@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>FocusLock · Options</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+  body {
+    min-height: 100vh;
+    background: #F4EFE3;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #14120D;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 520px }
+
+  .head { margin-bottom: 32px }
+  .seal { width: 48px; height: 48px; border-radius: 50%; background: #9B6B2B; color: #FAF7EE; display: flex; align-items: center; justify-content: center; font-style: italic; font-size: 24px; margin-bottom: 16px }
+  .eyebrow { font-family: Helvetica, Arial, sans-serif; font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #7A715E; margin-bottom: 8px }
+  h1 { font-size: 32px; font-weight: 400; line-height: 1.1; letter-spacing: -.01em }
+  h1 em { font-style: italic }
+  .sub { font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: #5A5142; line-height: 1.55; margin-top: 10px }
+
+  .card { background: #FAF7EE; border: 1px solid #E2DCCC; padding: 32px; margin-top: 24px }
+
+  label { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px }
+  .label-text { font-family: Helvetica, Arial, sans-serif; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #7A715E }
+  input[type=email], input[type=password], input[type=url] {
+    border: 0; border-bottom: 1px solid #C9B887; outline: none;
+    background: transparent; width: 100%;
+    font-family: 'Courier New', monospace; font-size: 14px; color: #14120D;
+    padding: 8px 0;
+  }
+  input:focus { border-bottom-color: #14120D }
+
+  .btn { background: #14120D; color: #FAF7EE; border: none; cursor: pointer; width: 100%; padding: 14px; font-family: Helvetica, Arial, sans-serif; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; margin-top: 8px }
+  .btn:hover { background: #3A332A }
+  .btn:disabled { opacity: .6; cursor: default }
+  .btn-ghost { background: none; border: 1px solid #C0392B; color: #C0392B; cursor: pointer; padding: 10px 20px; font-family: Helvetica, Arial, sans-serif; font-size: 11px; letter-spacing: .14em; text-transform: uppercase }
+  .btn-ghost:hover { background: #FDF0EE }
+
+  .error { border-left: 2px solid #C0392B; padding: 10px 14px; background: #FDF0EE; font-family: Helvetica, Arial, sans-serif; font-size: 13px; color: #7A1F1A; margin-bottom: 16px; display: none }
+  .error.show { display: block }
+
+  hr { border: none; border-top: 1px solid #E2DCCC; margin: 24px 0 }
+
+  /* Signed-in state */
+  #state-auth { display: none }
+  #state-login { display: block }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #E2DCCC }
+  .stat-cell { padding: 16px; border-right: 1px solid #E2DCCC }
+  .stat-cell:nth-child(even) { border-right: none }
+  .stat-label { font-family: Helvetica, Arial, sans-serif; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #7A715E; margin-bottom: 6px }
+  .stat-val { font-family: Georgia, serif; font-size: 18px; font-style: italic }
+
+  .domain-list { border: 1px solid #E2DCCC; background: #FAF7EE }
+  .domain-item { padding: 10px 14px; border-bottom: 1px solid #E2DCCC; font-family: 'Courier New', monospace; font-size: 12px; display: flex; align-items: center; gap: 10px }
+  .domain-item:last-child { border-bottom: none }
+
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0 }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="seal">F</div>
+    <div class="eyebrow">FocusLock · Extension Options</div>
+    <h1>The <em>scriptorium</em> key.</h1>
+    <div class="sub">Sign in to connect the extension to your account. Your blocked domains and schedule will sync automatically.</div>
+  </div>
+
+  <!-- Login form -->
+  <div id="state-login">
+    <div class="card">
+      <div class="error" id="login-error"></div>
+      <label>
+        <span class="label-text">Email</span>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+      </label>
+      <label>
+        <span class="label-text">Password</span>
+        <input type="password" id="password" placeholder="········" autocomplete="current-password" />
+      </label>
+      <button class="btn" id="login-btn">Sign in</button>
+
+      <hr />
+
+      <label>
+        <span class="label-text">API URL (optional — leave blank for default)</span>
+        <input type="url" id="api-url" placeholder="https://focuslock-production-faa2.up.railway.app" />
+      </label>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#7A715E;margin-top:4px">
+        Only change this if you are self-hosting the FocusLock API.
+      </div>
+    </div>
+  </div>
+
+  <!-- Signed-in state -->
+  <div id="state-auth">
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:12px">Signed in as</div>
+      <div style="font-family:Georgia,serif;font-size:22px;font-style:italic" id="auth-name"></div>
+      <div style="font-family:'Courier New',monospace;font-size:12px;color:#7A715E;margin-top:4px" id="auth-email"></div>
+
+      <hr />
+
+      <div class="eyebrow" style="margin-bottom:12px">Blocked domains</div>
+      <div class="domain-list" id="domain-list">
+        <div class="domain-item" style="color:#7A715E">Loading…</div>
+      </div>
+
+      <hr />
+
+      <div class="eyebrow" style="margin-bottom:12px">Partner</div>
+      <div id="partner-info" style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#5A5142">Loading…</div>
+
+      <hr />
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <button class="btn" id="sync-btn" style="flex:1;margin-top:0">↺ Sync now</button>
+        <button class="btn-ghost" id="logout-btn">Sign out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="options.js"></script>
+</body>
+</html>

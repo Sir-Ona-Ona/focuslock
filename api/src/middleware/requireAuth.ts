@@ -3,7 +3,10 @@ import { verifyToken } from '../lib/auth.js'
 
 export async function requireAuth(c: Context, next: Next) {
   const header = c.req.header('Authorization') ?? ''
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null
+  // EventSource cannot set custom headers; accept ?token= for SSE endpoints
+  const token = header.startsWith('Bearer ')
+    ? header.slice(7)
+    : (c.req.query('token') ?? null)
 
   if (!token) {
     return c.json({ error: 'Unauthorized' }, 401)

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>FocusLock</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+  body {
+    width: 320px;
+    background: #FAF7EE;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #14120D;
+    -webkit-font-smoothing: antialiased;
+  }
+  .head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid #E2DCCC;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #7A715E;
+  }
+  .head-logo { font-family: Georgia, serif; font-size: 14px; color: #14120D; letter-spacing: -.01em; font-style: normal }
+  .body { padding: 20px 18px; display: flex; flex-direction: column; gap: 16px }
+  .seal { width: 38px; height: 38px; border-radius: 50%; background: #9B6B2B; color: #FAF7EE; display: flex; align-items: center; justify-content: center; font-style: italic; font-size: 18px; flex-shrink: 0 }
+  .eyebrow { font-family: Helvetica, Arial, sans-serif; font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: #7A715E }
+  .headline { font-size: 20px; font-weight: 400; line-height: 1.15; letter-spacing: -.01em }
+  .headline em { font-style: italic }
+  .subtext { font-family: Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #5A5142 }
+
+  /* OTP */
+  #otp { display: flex; gap: 7px; justify-content: center }
+  #otp span {
+    width: 36px; height: 44px;
+    border: 1px solid #C9B887; background: #F4EFE3;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Courier New', monospace; font-size: 20px; font-weight: 600;
+    transition: border-color .1s;
+  }
+  #otp span.active { border-color: #14120D; border-width: 2px }
+  #otp span.filled { border-color: #14120D; background: #FAF7EE }
+  #otp.error span  { border-color: #C0392B !important }
+  #otp.success span{ border-color: #4F5B41 !important; background: #4F5B41; color: #FAF7EE }
+
+  .btn-row { display: flex; align-items: center; justify-content: center; gap: 16px }
+  .btn-q { background: none; border: none; cursor: pointer; font-family: Helvetica, Arial, sans-serif; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #7A715E; padding: 4px 0 }
+  .btn-q:hover { color: #14120D }
+  .btn-q:disabled { opacity: .5; cursor: default }
+
+  .divider { width: 1px; height: 12px; background: #E2DCCC }
+
+  #msg { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #7A715E; text-align: center; min-height: 14px }
+
+  /* Status pill */
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-family: Helvetica, Arial, sans-serif; font-size: 10px; letter-spacing: .14em; text-transform: uppercase }
+  .dot { width: 6px; height: 6px; border-radius: 50% }
+
+  .footer { padding: 10px 18px; border-top: 1px solid #E2DCCC; display: flex; justify-content: space-between; align-items: center }
+  .footer a { font-family: Helvetica, Arial, sans-serif; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #7A715E; text-decoration: none; cursor: pointer }
+  .footer a:hover { color: #14120D }
+
+  /* States */
+  #state-blocked  { display: none }
+  #state-grace    { display: none }
+  #state-open     { display: none }
+  #state-noauth   { display: none }
+  #state-loading  { display: flex }
+
+  .loading-text { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #7A715E; text-align: center; padding: 32px 18px }
+
+  @keyframes fl-fade { from { opacity: 0 } to { opacity: 1 } }
+  .body { animation: fl-fade .2s ease }
+</style>
+</head>
+<body>
+<div class="head">
+  <span>The scriptorium</span>
+  <span class="head-logo">FocusLock</span>
+  <span id="clock"></span>
+</div>
+
+<div class="body">
+
+  <!-- Loading -->
+  <div id="state-loading" style="justify-content:center">
+    <div class="loading-text">Checking the seal…</div>
+  </div>
+
+  <!-- Not signed in -->
+  <div id="state-noauth" style="flex-direction:column;gap:12px;align-items:center;text-align:center">
+    <div class="seal">F</div>
+    <div class="headline">Sign in to begin.</div>
+    <div class="subtext">Open the options page to log in to your account.</div>
+    <button class="btn-q" id="open-options-btn">Open options →</button>
+  </div>
+
+  <!-- Domain is open (not blocked) -->
+  <div id="state-open" style="flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="seal">F</div>
+      <div>
+        <div class="eyebrow">This domain</div>
+        <div id="open-domain" class="headline" style="font-size:16px"></div>
+      </div>
+    </div>
+    <div class="pill">
+      <span class="dot" style="background:#4F5B41"></span>
+      <span style="color:#4F5B41">Not restricted</span>
+    </div>
+    <div class="subtext" id="open-sub">This domain is not on your blocked list or the current hour is open.</div>
+  </div>
+
+  <!-- Grace window active -->
+  <div id="state-grace" style="flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="seal" style="background:#4F5B41">F</div>
+      <div>
+        <div class="eyebrow">Grace · in progress</div>
+        <div class="headline">Granted. <em>Briefly.</em></div>
+      </div>
+    </div>
+    <div class="subtext">The window closes at <strong id="grace-until"></strong>. Then it seals again.</div>
+  </div>
+
+  <!-- Blocked — OTP entry -->
+  <div id="state-blocked" style="flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="seal">F</div>
+      <div>
+        <div class="eyebrow">Sealed</div>
+        <div id="blocked-domain" class="headline" style="font-size:16px"></div>
+      </div>
+    </div>
+    <div class="subtext">Enter the code your partner sends you.</div>
+    <div id="otp">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn-q" id="req-btn">Request code</button>
+      <span class="divider"></span>
+      <button class="btn-q" id="clr-btn">Clear</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span id="unlock-count" style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:.1em;color:#7A715E"></span>
+  <a id="options-link">Settings ↗</a>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

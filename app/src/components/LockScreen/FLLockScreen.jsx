@@ -6,8 +6,8 @@ import FLFavicon from '../atoms/FLFavicon'
 import FLIcon from '../atoms/FLIcon'
 import FLGraceTimer from './FLGraceTimer'
 import FLLockedOutGate from './FLLockedOutGate'
-
-const CORRECT_CODE = '482917'
+import { api } from '../../lib/api'
+import { subscribe } from '../../lib/events'
 
 export default function FLLockScreen({
   state: forcedState,
@@ -25,25 +25,38 @@ export default function FLLockScreen({
   const [val, setVal] = useState('')
   const [internalState, setInternalState] = useState('idle')
   const [requestPulse, setRequestPulse] = useState(false)
+  const [graceUntilInternal, setGraceUntilInternal] = useState(null)
 
   const state = forcedState || internalState
   const isInteractive = !forcedState
+
+  // On mount, check real status from API
+  useEffect(() => {
+    if (!isInteractive) return
+    api.unlock.status(domain).then(s => {
+      if (s.state === 'grace') {
+        setInternalState('grace')
+        setGraceUntilInternal(s.expiresAt)
+      } else if (s.state === 'ratelimited') {
+        setInternalState('ratelimited')
+      }
+    }).catch(() => {})
+  }, [domain, isInteractive])
 
   useEffect(() => {
     if (!isInteractive) return
     if (val.length === 6) {
       setInternalState('validating')
-      const t = setTimeout(() => {
-        if (val === CORRECT_CODE) {
-          setInternalState('success')
-        } else {
-          setInternalState('error')
-          setTimeout(() => { setVal(''); setInternalState('idle') }, 1400)
-        }
-      }, 900)
-      return () => clearTimeout(t)
+      api.unlock.validate(val, domain).then(data => {
+        setInternalState('success')
+        if (data.graceExpiresAt) setGraceUntilInternal(data.graceExpiresAt)
+        setTimeout(() => { setVal(''); setInternalState('idle') }, 2200)
+      }).catch(() => {
+        setInternalState('error')
+        setTimeout(() => { setVal(''); setInternalState('idle') }, 1400)
+      })
     }
-  }, [val, isInteractive])
+  }, [val, isInteractive, domain])
 
   useEffect(() => {
     if (state === 'success' && isInteractive) {
@@ -51,6 +64,19 @@ export default function FLLockScreen({
       return () => clearTimeout(t)
     }
   }, [state, isInteractive])
+
+  // Real-time grace sync: when the partner validates a code on another device,
+  // the backend broadcasts grace_opened over SSE so this screen updates instantly.
+  useEffect(() => {
+    if (!isInteractive) return
+    return subscribe('grace_opened', ({ domain: d, expiresAt }) => {
+      // Match empty domain (settings unlock) or exact domain match
+      if (!d || d === domain) {
+        setInternalState('grace')
+        setGraceUntilInternal(expiresAt ?? null)
+      }
+    })
+  }, [domain, isInteractive])
 
   const onKey = (e) => {
     if (!isInteractive || state === 'validating' || state === 'success') return
@@ -60,6 +86,7 @@ export default function FLLockScreen({
 
   const requestCode = () => {
     setRequestPulse(true)
+    api.unlock.request(domain).catch(() => {})
     setTimeout(() => setRequestPulse(false), 1400)
   }
 
@@ -193,7 +220,7 @@ export default function FLLockScreen({
           {/* OTP / timer / gate */}
           <div style={{ marginTop: 8, minHeight: 64 }}>
             {isGrace ? (
-              <FLGraceTimer until={graceUntil || '10:00'} />
+              <FLGraceTimer until={graceUntilInternal || graceUntil || '10:00'} />
             ) : isRate ? (
               <FLLockedOutGate />
             ) : (

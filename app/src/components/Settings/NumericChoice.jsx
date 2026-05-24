@@ -1,7 +1,8 @@
 import { useState } from 'react'
 
-export default function NumericChoice({ label, unit, choices, active: initialActive }) {
+export default function NumericChoice({ label, unit, choices, active: initialActive, onChange }) {
   const [active, setActive] = useState(initialActive)
+  const pick = (c) => { setActive(c); onChange?.(c) }
   return (
     <div style={{ border: '1px solid var(--stone-line)', background: 'var(--vellum)' }}>
       <div style={{ padding: '14px 18px 12px', borderBottom: '1px solid var(--stone-line)' }}>
@@ -15,7 +16,7 @@ export default function NumericChoice({ label, unit, choices, active: initialAct
         {choices.map((c, idx) => (
           <div
             key={c}
-            onClick={() => setActive(c)}
+            onClick={() => pick(c)}
             style={{
               flex: 1,
               padding: '12px 0',
