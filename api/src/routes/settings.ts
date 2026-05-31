@@ -264,9 +264,10 @@ router.post(
 async function isSealed(userId: string): Promise<boolean> {
   const rows = await db.select().from(userSettings).where(eq(userSettings.userId, userId))
   const pref = rows[0]
-  return pref?.settingsSealedUntil
-    ? new Date(pref.settingsSealedUntil).getTime() < Date.now()
-    : true
+  // No record or no seal timestamp → not sealed (new users can set up freely)
+  // Sealed only when settingsSealedUntil exists AND has expired
+  if (!pref || !pref.settingsSealedUntil) return false
+  return new Date(pref.settingsSealedUntil).getTime() < Date.now()
 }
 
 export default router
