@@ -5,8 +5,8 @@
   --navy:       #0D1F3C;   /* primary text, nav bg */
   --navy-2:     #1A3A6B;   /* headings, strong elements */
   --navy-3:     #2E5090;   /* links, active states */
-  --navy-4:     #4A6FA5;   /* secondary text */
-  --navy-mute:  #7A95BF;   /* placeholder, muted labels */
+  --navy-4:     #1A3A6B;   /* secondary text — same as navy-2 for legibility */
+  --navy-mute:  #4A6FA5;   /* truly muted — borders, placeholders only */
 
   /* Keep semantic aliases so existing components don't break */
   --ink:        var(--navy);
@@ -196,8 +196,8 @@ body {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-weight: 600;
-  color: var(--navy-mute);
+  font-weight: 700;
+  color: var(--navy);
 }
 
 /* ── Buttons ── */

@@ -108,7 +108,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ border: '1px solid var(--stone-line)' }}>
                   {domains.length === 0 ? (
-                    <div style={{ padding: '14px 16px', fontFamily: 'var(--f-mono)', fontSize: 12, color: 'var(--ink-mute)' }}>
+                    <div style={{ padding: '14px 16px', fontFamily: 'var(--f-mono)', fontSize: 12, color: 'var(--navy)' }}>
                       No domains yet.
                     </div>
                   ) : domains.slice(0, 8).map((d, i) => (
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ border: '1px solid var(--stone-line)' }}>
                   {history.length === 0 ? (
-                    <div style={{ padding: '14px 16px', fontFamily: 'var(--f-mono)', fontSize: 12, color: 'var(--ink-mute)' }}>
+                    <div style={{ padding: '14px 16px', fontFamily: 'var(--f-mono)', fontSize: 12, color: 'var(--navy)' }}>
                       No unlocks yet.
                     </div>
                   ) : history.slice(0, 8).map((h, i) => (
@@ -215,15 +215,23 @@ function NavItem({ label, active, onClick }) {
 function StatCard({ label, value, note, warn, accent }) {
   return (
     <div style={{ padding: '20px 24px', background: '#fff' }}>
-      <div className="fl-eyebrow" style={{ marginBottom: 8 }}>{label}</div>
+      <div style={{
+        fontFamily: 'var(--f-sans)', fontSize: 11, fontWeight: 700,
+        letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--navy)',
+        marginBottom: 8,
+      }}>{label}</div>
       <div style={{
         fontFamily: 'var(--f-serif)', fontSize: 28, fontStyle: 'italic',
-        color: warn ? 'var(--crimson)' : accent ?? 'var(--ink)',
+        color: warn ? 'var(--crimson)' : accent ?? 'var(--navy)',
       }}>
         {value}
       </div>
       {note && (
-        <div style={{ fontFamily: 'var(--f-mono)', fontSize: 10, color: warn ? 'var(--crimson)' : accent ?? 'var(--ink-mute)', marginTop: 6, letterSpacing: '0.06em' }}>
+        <div style={{
+          fontFamily: 'var(--f-mono)', fontSize: 11,
+          color: warn ? 'var(--crimson)' : accent ?? 'var(--navy-2)',
+          marginTop: 6, letterSpacing: '0.04em',
+        }}>
           {note}
         </div>
       )}
