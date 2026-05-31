@@ -34,7 +34,7 @@ function SaveBtn({ busy, saved, onClick, label = 'Save changes' }) {
   )
 }
 
-export default function FLSettings({ initialLocked = true }) {
+export default function FLSettings({ initialLocked = true, onSignOut }) {
   const [locked, setLocked]           = useState(initialLocked)
   const [activeSection, setActiveSection] = useState('I')
   const [settings, setSettings]       = useState(null)
@@ -179,7 +179,20 @@ export default function FLSettings({ initialLocked = true }) {
       <FLRunningHead
         left={<>Liber Horarum · <span className="fl-mono" style={{ fontSize: 11 }}>cap. III — settings</span></>}
         center="FocusLock"
-        right={new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+        right={
+          <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span>{new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {onSignOut && (
+              <button onClick={onSignOut} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'var(--f-mono)', fontSize: 10, letterSpacing: '0.14em',
+                color: 'var(--ink-mute)', padding: 0, textTransform: 'uppercase',
+              }}>
+                sign out
+              </button>
+            )}
+          </span>
+        }
       />
 
       <div style={{ padding: '40px 64px 28px' }}>
