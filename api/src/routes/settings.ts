@@ -29,9 +29,10 @@ router.get('/', async (c) => {
 
   const pref    = prefs[0]
   const partner = partnerRows[0] ?? null
+  // sealed only when settingsSealedUntil exists AND has expired
   const sealed  = pref?.settingsSealedUntil
-    ? new Date(pref.settingsSealedUntil).getTime() > Date.now()
-    : true
+    ? new Date(pref.settingsSealedUntil).getTime() < Date.now()
+    : false
 
   return c.json({
     sealed,
