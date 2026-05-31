@@ -1,6 +1,6 @@
 // ── FocusLock Service Worker ──────────────────────────────────────────────────
 
-const DEFAULT_API = 'https://focuslock-production-faa2.up.railway.app'
+const DEFAULT_API = 'https://focus-lock.fly.dev'
 
 async function getApi() {
   const { apiUrl } = await chrome.storage.local.get('apiUrl')
