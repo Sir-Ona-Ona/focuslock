@@ -195,17 +195,38 @@ chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'sync') syncSettings()
 })
 
-// Expire stale grace windows every minute
+// Expire stale grace windows + lock already-open tabs every minute
 chrome.alarms.create('expire-grace', { periodInMinutes: 1 })
 chrome.alarms.onAlarm.addListener(async alarm => {
   if (alarm.name !== 'expire-grace') return
-  const { graceWindows = {} } = await chrome.storage.local.get('graceWindows')
+
+  const { graceWindows = {}, settings } = await chrome.storage.local.get(['graceWindows', 'settings'])
   const now = new Date()
+
+  // 1. Expire stale grace windows
   let changed = false
   for (const [k, v] of Object.entries(graceWindows)) {
     if (new Date(v) <= now) { delete graceWindows[k]; changed = true }
   }
   if (changed) await chrome.storage.local.set({ graceWindows })
+
+  // 2. Reload open tabs that are now inside a blocked schedule window
+  //    The content script will run fresh and show the lock screen.
+  if (!settings || !inSchedule(settings)) return
+
+  const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] })
+  for (const tab of tabs) {
+    try {
+      const url      = new URL(tab.url)
+      const hostname = url.hostname
+      if (!domainIsBlocked(hostname, settings)) continue
+      if (graceActive(graceWindows, hostname)) continue
+      // Reload — content.js runs at document_start and will show the lock screen
+      chrome.tabs.reload(tab.id)
+    } catch {
+      // Ignore tabs with unparseable URLs (chrome://, etc.)
+    }
+  }
 })
 
 chrome.runtime.onStartup.addListener(syncSettings)
