@@ -41,7 +41,7 @@ router.get('/', async (c) => {
     domains:  domList.map(d => ({ id: d.id, domain: d.domain, category: d.category })),
     schedule: schedList.map(s => ({ day: s.day, hourMask: JSON.parse(s.hourMask) as boolean[] })),
     partner: partner
-      ? { name: partner.name, email: partner.email, since: partner.since, codesIssued: partner.codesIssued }
+      ? { name: partner.name, email: partner.email, status: partner.status, since: partner.since, codesIssued: partner.codesIssued }
       : null,
   })
 })
