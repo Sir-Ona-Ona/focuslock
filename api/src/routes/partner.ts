@@ -128,11 +128,11 @@ function page({ title, body, action }: PageOptions): string {
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   body {
-    background: #F4EFE3;
+    background: #F4F7FB;
     margin: 0;
     padding: 48px 24px;
-    font-family: Georgia, 'Times New Roman', serif;
-    color: #14120D;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: #0D1F3C;
     min-height: 100vh;
     display: flex;
     align-items: flex-start;
@@ -141,59 +141,66 @@ function page({ title, body, action }: PageOptions): string {
   .wrap {
     max-width: 560px;
     width: 100%;
-    background: #FAF7EE;
-    border: 1px solid #E2DCCC;
+    background: #FFFFFF;
+    border: 1px solid #C8D6EA;
+    border-radius: 8px;
     padding: 48px 48px 40px;
+    box-shadow: 0 1px 4px rgba(13,31,60,.06);
   }
   .eyebrow {
-    font-family: Helvetica, Arial, sans-serif;
     font-size: 10px;
-    letter-spacing: 0.22em;
+    font-weight: 700;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #7A715E;
+    color: #4A6FA5;
     margin-bottom: 12px;
   }
   h1 {
     font-size: 26px;
-    font-weight: 400;
+    font-weight: 700;
     line-height: 1.25;
     margin: 0 0 24px;
+    color: #0D1F3C;
   }
   p {
     font-size: 15px;
     line-height: 1.65;
-    color: #3A332A;
+    color: #1A3A6B;
     margin: 0 0 14px;
   }
-  p strong { color: #14120D; }
+  p strong { color: #0D1F3C; }
   .pullquote {
     font-style: italic;
-    color: #5A5142;
-    border-left: 2px solid #C9B887;
+    color: #2E5090;
+    border-left: 3px solid #0D1F3C;
     padding-left: 16px;
     margin-top: 24px;
   }
   form { margin-top: 32px; }
   button {
-    background: #14120D;
-    color: #FAF7EE;
+    background: #0D1F3C;
+    color: #FFFFFF;
     border: none;
+    border-radius: 6px;
     padding: 14px 32px;
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.08em;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
+    transition: background .15s;
   }
-  button:hover { background: #3A332A; }
+  button:hover { background: #1A3A6B; }
   .seal {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #9B6B2B;
-    color: #FAF7EE;
-    font-size: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #0D1F3C;
+    color: #FFFFFF;
+    font-size: 22px;
     font-style: italic;
+    font-family: Georgia, serif;
     display: inline-flex;
     align-items: center;
     justify-content: center;
