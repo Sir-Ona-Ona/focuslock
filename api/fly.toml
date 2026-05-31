@@ -1,43 +1,56 @@
-# fly.toml — FocusLock API
-app = "focuslock-api"
-primary_region = "lhr"
+# fly.toml app configuration file generated for focus-lock on 2026-05-31T13:10:10+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'focus-lock'
+primary_region = 'lhr'
 
 [build]
 
 [env]
-  PORT = "3000"
-  DATABASE_URL = "/data/focuslock.db"
-  NODE_ENV = "production"
+  DATABASE_URL = '/data/focuslock.db'
+  NODE_ENV = 'production'
+  PORT = '3000'
 
-[mounts]
-  source = "focuslock_data"
-  destination = "/data"
+[[mounts]]
+  source = 'focuslock_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
 [[services]]
-  protocol = "tcp"
+  protocol = 'tcp'
   internal_port = 3000
 
   [[services.ports]]
     port = 80
-    handlers = ["http"]
+    handlers = ['http']
 
   [[services.ports]]
     port = 443
-    handlers = ["tls", "http"]
+    handlers = ['tls', 'http']
 
   [services.concurrency]
-    type = "connections"
+    type = 'connections'
     hard_limit = 25
     soft_limit = 20
 
   [[services.http_checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
-    method = "GET"
-    path = "/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  memory = "256mb"
-  cpu_kind = "shared"
+  memory = '256mb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 256
