@@ -1,30 +1,49 @@
-/* FocusLock — Scriptorium design tokens */
+/* FocusLock — White & Navy design tokens */
 
 :root {
-  --ink: #14120D;
-  --ink-2: #211D15;
-  --ink-3: #3A332A;
-  --ink-4: #5A5142;
-  --ink-mute: #7A715E;
+  /* Navy scale */
+  --navy:       #0D1F3C;   /* primary text, nav bg */
+  --navy-2:     #1A3A6B;   /* headings, strong elements */
+  --navy-3:     #2E5090;   /* links, active states */
+  --navy-4:     #4A6FA5;   /* secondary text */
+  --navy-mute:  #7A95BF;   /* placeholder, muted labels */
 
-  --parchment: #EEEAE0;
-  --paper: #F4EFE3;
-  --vellum: #FAF7EE;
-  --bone: #FDFBF5;
+  /* Keep semantic aliases so existing components don't break */
+  --ink:        var(--navy);
+  --ink-2:      var(--navy-2);
+  --ink-3:      var(--navy-3);
+  --ink-4:      var(--navy-4);
+  --ink-mute:   var(--navy-mute);
 
-  --stone: #B8B2A2;
-  --stone-soft: #D3CDBD;
-  --stone-line: #E2DCCC;
+  /* Surface scale (white-based) */
+  --white:      #FFFFFF;
+  --surface:    #F4F7FB;   /* page sections, cards */
+  --surface-2:  #EBF0F8;   /* hover, subtle bg */
+  --vellum:     #F8FAFD;   /* component backgrounds */
+  --paper:      #FFFFFF;
+  --bone:       #F4F7FB;
+  --parchment:  #EBF0F8;
 
-  --bronze: #9B6B2B;
-  --bronze-soft: #B68A48;
-  --bronze-deep: #6E4A1A;
-  --crimson: #7A2E26;
-  --moss: #4F5B41;
+  /* Border */
+  --stone-line: #C8D6EA;
+  --stone-soft: #DDE6F2;
+  --stone:      #8FA8C9;
 
+  /* Semantic accent colours */
+  --bronze:     #C07D2A;   /* warnings, pending states */
+  --moss:       #2E7D4F;   /* success, active */
+  --crimson:    #B91C1C;   /* danger, errors */
+
+  /* Banner backgrounds */
+  --banner-info:    #EEF4FF;
+  --banner-success: #F0FBF4;
+  --banner-warn:    #FFFBEB;
+  --banner-danger:  #FEF2F2;
+
+  /* Typography */
   --f-serif: "Newsreader", "EB Garamond", "Iowan Old Style", Georgia, serif;
-  --f-sans: "Geist", "Söhne", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --f-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --f-sans:  "Geist", "Söhne", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-mono:  "JetBrains Mono", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   --ease: cubic-bezier(.2, .7, .3, 1);
 }
@@ -45,7 +64,7 @@ html, body, #root {
 body {
   background: #FFFFFF;
   font-family: var(--f-sans);
-  color: var(--ink);
+  color: var(--navy);
 }
 
 /* ── Keyframe animations ── */
@@ -62,7 +81,7 @@ body {
 
 @keyframes fl-flash-success {
   0% { background: var(--vellum); }
-  30% { background: #E7EDD9; }
+  30% { background: var(--banner-success); }
   100% { background: var(--vellum); }
 }
 
@@ -92,21 +111,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bone);
+  background: var(--surface);
   border: 1px solid var(--stone-line);
-  border-bottom: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--navy-4);
   font-family: var(--f-mono);
   font-size: 26px;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--navy);
   transition: all .15s var(--ease);
 }
 
-.fl-otp .d.filled { border-bottom-color: var(--bronze); }
+.fl-otp .d.filled { border-bottom-color: var(--navy-2); }
 
 .fl-otp .d.active {
-  border-color: var(--ink);
-  box-shadow: inset 0 -2px 0 var(--ink);
+  border-color: var(--navy);
+  box-shadow: inset 0 -2px 0 var(--navy);
 }
 
 .fl-otp.error .d {
@@ -127,8 +146,8 @@ body {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--crimson) 12%, var(--crimson) 88%, transparent);
-  opacity: 0.45;
+  background: linear-gradient(to bottom, transparent, var(--navy-3) 12%, var(--navy-3) 88%, transparent);
+  opacity: 0.2;
   pointer-events: none;
 }
 
@@ -147,7 +166,7 @@ body {
 }
 
 .fl-tick i.on {
-  background: var(--ink);
+  background: var(--navy);
 }
 
 /* ── Hairline rules ── */
@@ -161,24 +180,24 @@ body {
 
 .fl-rule-ink {
   height: 1px;
-  background: var(--ink);
+  background: var(--navy);
   border: 0;
   margin: 0;
 }
 
 /* ── Type utilities ── */
 
-.fl-serif { font-family: var(--f-serif); font-weight: 400; }
+.fl-serif    { font-family: var(--f-serif); font-weight: 400; }
 .fl-serif-it { font-family: var(--f-serif); font-style: italic; font-weight: 400; }
-.fl-mono { font-family: var(--f-mono); font-feature-settings: "tnum"; }
+.fl-mono     { font-family: var(--f-mono); font-feature-settings: "tnum"; }
 
 .fl-eyebrow {
   font-family: var(--f-sans);
   font-size: 11px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-weight: 500;
-  color: var(--ink-mute);
+  font-weight: 600;
+  color: var(--navy-mute);
 }
 
 /* ── Buttons ── */
@@ -190,8 +209,8 @@ body {
   gap: 8px;
   height: 44px;
   padding: 0 22px;
-  background: var(--ink);
-  color: var(--vellum);
+  background: var(--navy);
+  color: #FFFFFF;
   border: 0;
   font-family: var(--f-sans);
   font-size: 13px;
@@ -199,21 +218,22 @@ body {
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: all .15s var(--ease);
+  border-radius: 4px;
 }
 
-.fl-btn:hover { background: var(--ink-2); }
+.fl-btn:hover { background: var(--navy-2); }
 
 .fl-btn--ghost {
   background: transparent;
-  color: var(--ink);
+  color: var(--navy);
   border: 1px solid var(--stone-line);
 }
 
-.fl-btn--ghost:hover { border-color: var(--ink); background: transparent; }
+.fl-btn--ghost:hover { border-color: var(--navy); background: var(--surface); }
 
 .fl-btn--quiet {
   background: transparent;
-  color: var(--ink-mute);
+  color: var(--navy-mute);
   height: 36px;
   padding: 0;
   border: 0;
@@ -228,14 +248,14 @@ body {
   transition: all .15s var(--ease);
 }
 
-.fl-btn--quiet:hover { color: var(--ink); text-decoration-color: var(--ink); }
+.fl-btn--quiet:hover { color: var(--navy); text-decoration-color: var(--navy); }
 
 .fl-btn--block { width: 100%; }
 
-/* ── Canvas nav ── */
+/* ── Canvas nav (kept for internal use) ── */
 
 .canvas-nav {
-  background: var(--ink);
+  background: var(--navy);
   padding: 12px 24px;
   display: flex;
   align-items: center;
@@ -250,7 +270,7 @@ body {
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: var(--stone);
+  color: var(--navy-mute);
   text-decoration: none;
   padding: 6px 12px;
   border: 1px solid transparent;
@@ -259,8 +279,8 @@ body {
 
 .canvas-nav a:hover,
 .canvas-nav a.active {
-  color: var(--vellum);
-  border-color: var(--stone);
+  color: #FFFFFF;
+  border-color: var(--navy-mute);
 }
 
 .canvas-section {
@@ -274,7 +294,7 @@ body {
   font-family: var(--f-mono);
   font-size: 10px;
   letter-spacing: 0.2em;
-  color: var(--ink-mute);
+  color: var(--navy-mute);
   text-transform: uppercase;
   margin-bottom: 8px;
 }
