@@ -43,7 +43,7 @@ html, body, #root {
 }
 
 body {
-  background: #E9E3D4;
+  background: #FFFFFF;
   font-family: var(--f-sans);
   color: var(--ink);
 }
