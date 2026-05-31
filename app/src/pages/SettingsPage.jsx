@@ -6,7 +6,7 @@ export default function SettingsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff' }}>
-      <FLSettings initialLocked={true} onSignOut={logout} />
+      <FLSettings initialLocked={false} onSignOut={logout} />
     </div>
   )
 }
