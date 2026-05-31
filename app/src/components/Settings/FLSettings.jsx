@@ -78,6 +78,8 @@ export default function FLSettings({ initialLocked = true, onSignOut }) {
       setGraceMin(data.graceWindowMin ?? 10)
       setDailyMax(data.dailyUnlockMax ?? 5)
       if (data.schedule?.length) scheduleRef.current = data.schedule
+      // No partner yet — unlock settings automatically so they can set one up
+      if (!data.partner) setLocked(false)
     }).catch(() => {})
     api.unlock.history().then(r => setHistory(r.history ?? [])).catch(() => {})
   }, [])
