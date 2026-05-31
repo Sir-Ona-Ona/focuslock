@@ -20,7 +20,15 @@ const app = new Hono()
 app.use('*', logger())
 
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'http://localhost:4400'],
+  origin: (origin) => {
+    // Allow any Netlify/Vercel preview + localhost
+    if (!origin) return '*'
+    if (origin.includes('localhost')) return origin
+    if (origin.includes('.netlify.app')) return origin
+    if (origin.includes('.vercel.app')) return origin
+    // Add your custom domain here if you have one
+    return origin
+  },
   allowHeaders: ['Content-Type', 'Authorization'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,

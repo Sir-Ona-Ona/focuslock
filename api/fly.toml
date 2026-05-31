@@ -1,0 +1,43 @@
+# fly.toml — FocusLock API
+app = "focuslock-api"
+primary_region = "lhr"
+
+[build]
+
+[env]
+  PORT = "3000"
+  DATABASE_URL = "/data/focuslock.db"
+  NODE_ENV = "production"
+
+[mounts]
+  source = "focuslock_data"
+  destination = "/data"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 3000
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
