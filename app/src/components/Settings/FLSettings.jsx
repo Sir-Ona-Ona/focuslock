@@ -179,7 +179,12 @@ export default function FLSettings({ initialLocked = true, onSignOut }) {
       fontFamily: 'var(--f-sans)', color: 'var(--ink)',
     }}>
       <FLRunningHead
-        left={<>Liber Horarum · <span className="fl-mono" style={{ fontSize: 11 }}>cap. III — settings</span></>}
+        left={<>
+          <a href="/#/" style={{ fontFamily: 'var(--f-mono)', fontSize: 10, color: 'var(--ink-mute)', textDecoration: 'none', letterSpacing: '0.12em', marginRight: 12 }}>
+            ← overview
+          </a>
+          <span className="fl-mono" style={{ fontSize: 11 }}>settings</span>
+        </>}
         center="FocusLock"
         right={
           <span style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

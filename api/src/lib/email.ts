@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = process.env.RESEND_FROM ?? 'FocusLock <noreply@focuslock.app>'
+const FROM = process.env.RESEND_FROM ?? 'FocusLock <onboarding@resend.dev>'
 
 let _resend: Resend | null = null
 function getResend(): Resend {
