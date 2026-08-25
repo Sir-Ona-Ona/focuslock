@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { sql } from 'drizzle-orm';
+import { configState } from '@/lib/config';
+import { Misconfigured, NotConfigured } from '@/components/ui/NotConfigured';
 import { currentViewer } from '@/lib/auth/session';
 import { supabaseServer } from '@/lib/supabase/server';
-import { withMember } from '@/lib/db/client';
+import { scopeProblem, withMember } from '@/lib/db/client';
 import { members, tracks } from '@/lib/plan/read';
 import { proposedCycles } from '@/lib/rules/agreement';
 import { method } from '@/lib/method/accessor';
@@ -15,6 +17,17 @@ import { trackToken } from '@/components/ui/vocab';
 export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // Checked before anything can throw. A fresh deploy should name the missing
+  // variable rather than return a 500 that hides which one it is.
+  const config = configState();
+  if (!config.ready) return <NotConfigured state={config} />;
+
+  // Checked before a viewer is resolved, so a connection that can ignore row
+  // level security is reported here rather than discovered by the first person
+  // who signs in.
+  const problem = await scopeProblem();
+  if (problem) return <Misconfigured problem={problem} />;
+
   const viewer = await currentViewer();
   // Signed in but not a member of a household yet: that is setup, not a dead end.
   if (!viewer) {

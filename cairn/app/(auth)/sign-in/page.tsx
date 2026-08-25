@@ -1,4 +1,7 @@
 import { redirect } from 'next/navigation';
+import { configState } from '@/lib/config';
+import { Misconfigured, NotConfigured } from '@/components/ui/NotConfigured';
+import { scopeProblem } from '@/lib/db/client';
 import { currentViewer } from '@/lib/auth/session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { SignInForm } from './SignInForm';
@@ -6,6 +9,12 @@ import { SignInForm } from './SignInForm';
 export const dynamic = 'force-dynamic';
 
 export default async function SignInPage() {
+  const config = configState();
+  if (!config.ready) return <NotConfigured state={config} />;
+
+  const problem = await scopeProblem();
+  if (problem) return <Misconfigured problem={problem} />;
+
   const viewer = await currentViewer().catch(() => null);
   if (viewer) redirect('/');
 

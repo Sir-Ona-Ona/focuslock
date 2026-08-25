@@ -21,32 +21,47 @@ function connection() {
 }
 
 /**
- * Refuses to serve a request over a connection that can ignore row level
- * security. A superuser or a role with BYPASSRLS makes every policy in this
- * schema decorative, and it fails silently: the policies still exist, they are
- * simply never consulted. Better to refuse at the first query than to serve one
- * member another member's private items.
+ * Reports whether this connection can ignore row level security.
+ *
+ * A superuser, or a role with BYPASSRLS, makes every policy in this schema
+ * decorative, and it fails silently: the policies still exist, they are simply
+ * never consulted. The result is a deployment that looks healthy, serves signed
+ * out pages perfectly, and hands one member another member's private items the
+ * moment somebody signs in.
+ *
+ * So it is checked in two places. The shell calls this before rendering, so a
+ * misconfigured DATABASE_URL is reported on screen rather than discovered later.
+ * withMember() throws on the same condition, so no request path can slip past
+ * by not going through the shell.
  */
-let scopeChecked: Promise<void> | undefined;
+let scopeCheck: Promise<string | null> | undefined;
 
-async function assertScopedRole(database: Db): Promise<void> {
-  scopeChecked ??= (async () => {
-    const rows = (await database.execute(sql`
-      select current_user as role, rolsuper, rolbypassrls
-        from pg_roles where rolname = current_user`)) as unknown as
-      Array<{ role: string; rolsuper: boolean; rolbypassrls: boolean }>;
+export function scopeProblem(): Promise<string | null> {
+  scopeCheck ??= (async () => {
+    try {
+      const rows = (await db().execute(sql`
+        select current_user as role, rolsuper, rolbypassrls
+          from pg_roles where rolname = current_user`)) as unknown as
+        Array<{ role: string; rolsuper: boolean; rolbypassrls: boolean }>;
 
-    const row = rows[0];
-    if (!row) return;
-    if (row.rolsuper || row.rolbypassrls) {
-      throw new Error(
-        `DATABASE_URL connects as ${row.role}, which bypasses row level security. `
-        + 'Every privacy and authorship policy in Cairn would be ignored. Connect as the '
-        + 'cairn_app role instead, and keep the owner connection for DIRECT_URL.',
-      );
+      const row = rows[0];
+      if (!row) return null;
+      if (row.rolsuper || row.rolbypassrls) {
+        return `DATABASE_URL connects as ${row.role}, which bypasses row level security. `
+          + 'Every privacy and authorship policy in Cairn would be ignored, silently. '
+          + 'Connect as the cairn_app role instead, and keep the owner connection for '
+          + 'DIRECT_URL, which is used by migrations only.';
+      }
+      return null;
+    } catch (e) {
+      // A database that cannot be reached is a different problem, reported by
+      // whatever tries to use it. This check does not invent a diagnosis.
+      return e instanceof Error && e.message.includes('DATABASE_URL')
+        ? e.message
+        : null;
     }
   })();
-  return scopeChecked;
+  return scopeCheck;
 }
 
 export type Db = PostgresJsDatabase<typeof schema>;
@@ -70,9 +85,9 @@ export async function withMember<T>(
   memberId: string,
   fn: (tx: Tx) => Promise<T>,
 ): Promise<T> {
-  const database = db();
-  await assertScopedRole(database);
-  return database.transaction(async (tx) => {
+  const problem = await scopeProblem();
+  if (problem) throw new Error(problem);
+  return db().transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.member_id', ${memberId}, true)`);
     return fn(tx);
   });

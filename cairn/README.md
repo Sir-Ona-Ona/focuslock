@@ -65,16 +65,88 @@ then point `DATABASE_URL` at it through the pooler.
 
 ## Deploying to Vercel
 
-The project root is `cairn/`. Set that as the Root Directory in the Vercel
-project, add the environment variables from `.env.example`, and deploy. The
-build needs no database: every page is server rendered on demand.
+The app builds with no environment set, and a deployment that has none renders a
+page naming the variables it needs rather than a 500. So it is safe to deploy
+first and configure second.
 
-Migrations do not run on deploy. Run `npm run db:push` against the target
-database with `DIRECT_URL` set, then deploy.
+### 1. Create the Supabase project
 
-`vercel.json` registers three cron entries for phase 6 (cadence reminders, prep
-briefs, the collision scan). They are guarded by `CRON_SECRET` and currently
-return a not-implemented response.
+Any region. Note the project URL and the anon key from Settings, API, and the
+database password you set at creation.
+
+### 2. Apply the migrations
+
+Migrations do not run on deploy, and they should not: a deploy that rewrites the
+schema is a deploy that can lose a plan. Run them once, from anywhere with the
+repository checked out.
+
+```bash
+cd cairn
+npm install
+DIRECT_URL="postgres://postgres:PASSWORD@db.PROJECT.supabase.co:5432/postgres" \
+  npm run db:push
+```
+
+That applies every migration in order, seeds the canonical method from the six
+skills, and creates the `cairn_app` role.
+
+### 3. Give `cairn_app` a password
+
+The app connects as that role, and only that role. Run against the same
+database:
+
+```sql
+alter role cairn_app with login password 'a long random string';
+```
+
+This is the step that matters most. `cairn_app` cannot bypass row level
+security; the `postgres` role can. Row level security is the enforcement
+mechanism for every privacy and authorship rule in Cairn, and a superuser
+ignores all of it silently: the policies still exist and are never consulted.
+Point `DATABASE_URL` at the wrong role and the app refuses to serve, with the
+reason on screen, rather than quietly showing one member another member's
+private items.
+
+### 4. Create the Vercel project
+
+Import `Sir-Ona-Ona/focuslock` and set **Root Directory** to `cairn`. The
+repository also holds an unrelated project at its root, so this is required.
+
+### 5. Set the environment variables
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | `postgres://cairn_app:PASSWORD@db.PROJECT.supabase.co:6543/postgres?pgbouncer=true` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Your project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your anon key |
+| `ANTHROPIC_API_KEY` | Optional. Facilitated reviews only |
+| `CRON_SECRET` | Optional until phase 6 |
+
+Port 6543 is the pooler, which is what a serverless runtime should use. Keep
+`DIRECT_URL` out of Vercel entirely: it is the owner connection and belongs
+only wherever you run migrations.
+
+`SUPABASE_SERVICE_ROLE_KEY` is not needed and should not be set. Nothing in a
+request path uses it.
+
+### 6. Point Supabase auth at the deployment
+
+In Supabase, Authentication, URL Configuration, set the Site URL to the Vercel
+domain and add `https://YOUR-DOMAIN/auth/callback` to the redirect allow list.
+Sign in is an email one time code, so no other provider setup is needed.
+
+### 7. Deploy, then claim
+
+Redeploy so the environment is picked up. Open the site, sign in with your
+email, and create the household. Your partner signs in with the address you
+gave and claims their own track.
+
+### Scheduled routes
+
+Not registered in `vercel.json`, deliberately. They are no-ops until phase 6,
+and the Hobby plan caps a project at two cron jobs, so registering three fails
+the deploy for a reason that has nothing to do with the code. `CRON.md` has the
+schedules to add when phase 6 lands.
 
 ## Checks
 
