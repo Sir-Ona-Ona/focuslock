@@ -41,6 +41,8 @@ export const requestStatus = pgEnum('request_status', ['pending', 'approved', 'd
 export const gateStatus    = pgEnum('gate_status', ['open', 'closed']);
 export const actionStatus  = pgEnum('action_status', ['proposed', 'accepted', 'declined']);
 export const staleness     = pgEnum('staleness', ['low', 'medium', 'high']);
+export const modelFlow     = pgEnum('model_flow',
+  ['interview', 'review', 'session', 'brief', 'prep', 'advisor', 'advisory_review']);
 
 const now = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -578,6 +580,32 @@ export const advisoryReview = pgTable('advisory_review', {
   actions: jsonb('actions'),
   computedFacts: jsonb('computed_facts'),
   artifactUrl: text('artifact_url'),
+});
+
+/**
+ * Every call to the model, with what it cost.
+ *
+ * OD-8 priced Cairn as a flat per-household subscription, which accepts that
+ * cost scales with engagement while price does not. That exposure is only
+ * manageable if it is measured, so this table is written on every call from the
+ * first facilitated review rather than added later: cost recorded
+ * retrospectively is guesswork, and OD-9 turns on the real distribution.
+ */
+export const modelCall = pgTable('model_call', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  householdId: uuid('household_id').notNull().references(() => household.id),
+  memberId: uuid('member_id').references(() => member.id),
+  sessionId: uuid('session_id').references(() => sessionRow.id),
+  flow: modelFlow('flow').notNull(),
+  model: text('model').notNull(),
+  methodVersionId: uuid('method_version_id').notNull().references(() => methodVersion.id),
+  inputTokens: integer('input_tokens').notNull().default(0),
+  outputTokens: integer('output_tokens').notNull().default(0),
+  cacheReadInputTokens: integer('cache_read_input_tokens').notNull().default(0),
+  cacheCreationInputTokens: integer('cache_creation_input_tokens').notNull().default(0),
+  /** Priced from the rate card at the time of the call, so a later price change does not rewrite history. */
+  costUsd: numeric('cost_usd', { precision: 12, scale: 6 }).notNull().default('0'),
+  createdAt: now(),
 });
 
 export const advisoryReviewAction = pgTable('advisory_review_action', {

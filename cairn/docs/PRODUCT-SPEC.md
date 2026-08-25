@@ -803,6 +803,7 @@ deleted, because the reasoning is what a future maintainer will need.
 | OD-5 | Members beyond two | **Schema holds up to six, UI ships for two, add-member is an enabled function.** Three roles: principal, dependent, advisor. Section 3 has the model |
 | OD-6 | Name | **Cairn** |
 | OD-3 | When product direction is decided | **Before phase 4**, at an explicit gate between phase 3 and phase 4, informed by a spike that runs the facilitated flows by hand against real phase 3 data. Section 8 has the gate, its evidence and its three directions |
+| OD-8 | Pricing shape, reopening OD-4 | **Flat per-household subscription**, model usage absorbed rather than metered. Accepts that cost scales with engagement and price does not, and instruments cost per household per flow so the exposure is measured. See below |
 | OD-7 | Product direction, at the gate | **Product now.** Multi-household, billing, onboarding and a marketing surface are built alongside phases 4 to 8. Decided by the owner without the spike, so the cost evidence the direction turns on does not exist yet. See below |
 
 ### OD-7, and what it opens
@@ -835,19 +836,42 @@ objections:
    that will not sustain the tool, which section 13 names as the most likely failure by a wide
    margin.
 
-**What follows from it.** OD-4 is reopened as OD-8. Pooled and included was decided for two
-people, where model cost is a personal expense. It does not survive a product: cost scales with
-engagement, which is the wrong direction for margin, and the 210 minute quarterly session is the
-largest single-context cost in the system. A pricing and metering decision is now required and
-is recorded separately.
+**What follows from it.** OD-4 was reopened as OD-8 and answered: a flat per-household
+subscription, recorded below with the exposure it accepts and the instrumentation that makes
+that exposure measurable.
+
+### OD-8: pricing shape
+
+**Decision: a flat per-household subscription.** One price per household per month, with model
+usage absorbed rather than metered. Recorded 2026-08-25, reopening and answering OD-4 for the
+product case.
+
+It keeps OD-4's reasoning intact where that reasoning still holds: model usage is part of the
+product rather than a line item a household manages, and nobody rations the sessions the method
+depends on in order to save money. A household that runs every session as designed is the
+household the method is working for, and a price that punishes them is a price that argues
+against the product.
+
+**The exposure it accepts, stated plainly.** Cost scales with engagement and price does not. A
+household running the full method costs several times one that runs reviews only, and the 210
+minute quarterly joint session is the largest single-context cost in the system. At a flat price
+the heaviest users carry the thinnest margin, which is the opposite of how a subscription
+usually behaves.
+
+**What makes that exposure manageable rather than unknown.** Model cost is instrumented per
+household per flow from the first facilitated review, so the distribution is measured rather
+than assumed. Three numbers decide whether the flat price holds: cost at the median household,
+cost at the ninetieth percentile, and cost of a household running every session on cadence. If
+the last of those exceeds the price, the answer is a higher flat price or a fair use ceiling on
+facilitated sessions, not a switch to metering.
 
 ### Still open
 
 | ID | Decision | Needs |
 |----|----------|-------|
-| OD-8 | Pricing and model cost, reopening OD-4 | Per-household cost by flow, instrumented from the first facilitated review in phase 4 |
+| OD-9 | The price itself, and whether a fair use ceiling is needed | Cost at the median, the ninetieth percentile, and a household running the full method, from the instrumentation shipping with phase 4 |
 
-New decisions get IDs continuing from OD-9 and are recorded here with their reasoning rather
+New decisions get IDs continuing from OD-10 and are recorded here with their reasoning rather
 than replacing what is above.
 
 ### Where OD-3 and OD-4 meet

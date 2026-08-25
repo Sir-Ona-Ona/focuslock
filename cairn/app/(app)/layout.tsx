@@ -39,12 +39,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       select count(*)::int as n from method_change_request where status = 'pending'`)) as unknown as
       { n: number }[];
 
+    const openReview = (await tx.execute(sql`
+      select id from session_row
+       where kind = 'review' and ended_at is null
+         and ${viewer.memberId}::uuid = any(actor_member_ids)
+       order by started_at desc limit 1`)) as unknown as { id: string }[];
+
     return {
       people,
       allTracks,
       unagreed: unagreed.length,
       openCollisions: openCollisions[0]?.n ?? 0,
       pendingRequests: pendingRequests[0]?.n ?? 0,
+      openReviewId: openReview[0]?.id ?? null,
       methodVersion: m.version,
     };
   });
@@ -84,7 +91,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     {
       group: 'Work',
       items: [
+        ...(chrome.openReviewId
+          ? [{ href: `/session/${chrome.openReviewId}`, label: 'Review in progress', alert: true, count: 1 }]
+          : []),
         { href: '/money', label: 'Money' },
+        { href: '/cost', label: 'Model cost' },
         { href: '/logs', label: 'Logs' },
       ],
     },

@@ -22,8 +22,8 @@ document those depend on someone noticing. Here they are queries.
 | 1 | Individual track CRUD across seven domains, private flags with disclosure, hours and money capture | Built |
 | 2 | Joint plan, the three-response agreement lifecycle, pending queues | Built |
 | 3 | Timeline | Built |
-| G | Product direction gate | **Closed: product now (OD-7).** Multi-household built. Billing, onboarding and marketing pending |
-| 4 | Rules engine, then Claude-facilitated reviews on top of it | Rules engine built and tested. Model flows not started |
+| G | Product direction gate | **Closed: product now (OD-7).** Multi-household built, cost instrumented. Billing, onboarding and marketing pending |
+| 4 | Rules engine, then Claude-facilitated reviews on top of it | Built. Reviews run against the engine's numbers, with per-household cost instrumented |
 | 5 to 8 | Decisions, sessions, members beyond two, the advisory layer | Schema and registry seeded, behaviour not built |
 
 Phases 0 to 3 are usable with no model in the loop, which is the intended
@@ -132,6 +132,42 @@ A hardcoded threshold, timebox, domain list or prompt anywhere in `app/`,
 `lib/` or `components/` outside `lib/method/seed/` fails `npm run check:literals`.
 Where a number genuinely is not a method value, the line says so:
 `// method-literal-ok: <reason>`.
+
+## Facilitated reviews
+
+A review opens from home, runs to the method's timebox, and closes. The order it
+runs in is the point:
+
+1. The rules engine computes every count the review will discuss: what has
+   moved and how many times, what is unagreed and for how long, what is past its
+   test date, where hours exceed the ceiling, and which month the money does not
+   cover.
+2. Those numbers are rendered into the prompt as a facts block.
+3. The model runs the conversation about them.
+
+It is never asked to count. Building the conversation first and the counting
+second is the prototype's flaw in a more expensive form, so the engine shipped
+and was tested before any model flow was written, and
+`tests/claude/assemble.test.ts` asserts that no assembled prompt asks for a
+tally.
+
+The tool list is the other half. Every tool wraps the same RLS-guarded operation
+the interface calls, so a prompt asking the model to fill in the partner's track
+does not fail because the prompt says not to: the row level policy rejects the
+write. There is no tool to set a weight, none to decide anything, none to agree
+a joint item, and none to write into a track directly. Reaching another member
+goes through their pending queue, which is where it goes when a person does it
+too.
+
+Reviews need `ANTHROPIC_API_KEY`. Without it every other part of Cairn works and
+a review can be run by hand from the track screens.
+
+## Model cost
+
+`/cost` reports what this household costs to run, by flow and by month, priced
+at the rate card as it stood on the day of each call. It is written from the
+first facilitated review rather than added later, because cost recorded
+retrospectively is guesswork and OD-9 turns on the real distribution.
 
 ## Product direction
 

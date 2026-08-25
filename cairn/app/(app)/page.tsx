@@ -10,8 +10,10 @@ import { slippage } from '@/lib/rules/slippage';
 import { proposedCycles } from '@/lib/rules/agreement';
 import { openAssumptions } from '@/lib/rules/assumptions';
 import { Card, Tile } from '@/components/ui/Tile';
+import { StartReview } from '@/components/session/StartReview';
 import { StatusPill } from '@/components/ui/Pills';
 import { formatMoney, formatMonth } from '@/components/ui/vocab';
+import { modelAvailable } from '@/lib/claude/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,6 +97,18 @@ export default async function Home() {
           query, so nothing depends on anyone remembering to check it.
         </p>
       </header>
+
+      <Card
+        title="Run a review"
+        sub="The counts are computed first and handed over. The conversation is about them, never a recount."
+      >
+        <div className="flex flex-wrap gap-3">
+          <StartReview mode="individual" label="Your review" available={modelAvailable()} />
+          {viewer.role === 'principal' ? (
+            <StartReview mode="joint" label="Joint review" available={modelAvailable()} />
+          ) : null}
+        </div>
+      </Card>
 
       {unclaimed.length > 0 ? (
         <div className="card border-dashed p-4">
