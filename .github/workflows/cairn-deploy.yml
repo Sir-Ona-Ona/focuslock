@@ -1,0 +1,142 @@
+name: Deploy Cairn to Vercel
+
+# The Claude Code environment that builds Cairn cannot reach api.vercel.com:
+# the network policy denies it. GitHub runners have no such restriction, so the
+# deploy runs here instead, and the token lives in repository secrets rather
+# than in anyone's terminal history.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deploy to production or a preview
+        type: choice
+        options: [production, preview]
+        default: preview
+  push:
+    branches:
+      - main
+    paths:
+      - 'cairn/**'
+      - '.github/workflows/cairn-deploy.yml'
+
+concurrency:
+  group: cairn-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cairn
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cairn/.nvmrc
+          cache: npm
+          cache-dependency-path: cairn/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # The checks that do not need a database. The suites that do are skipped
+      # rather than passed, so a green run here never implies they ran.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Check for method values written as literals
+        run: npm run check:literals
+
+      - name: Test
+        run: npm test
+
+      - name: Install the Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Link the project, creating it on first run
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN is not set. Add it under Settings, Secrets and variables, Actions."
+            exit 1
+          fi
+          vercel link --yes --project "${{ vars.VERCEL_PROJECT_NAME || 'cairn' }}" \
+            --token "$VERCEL_TOKEN"
+
+      # Only runs for a secret that is actually set, so a partially configured
+      # project is not silently overwritten with empty values.
+      - name: Sync environment variables from repository secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET: ${{ github.event.inputs.environment || 'production' }}
+          DATABASE_URL: ${{ secrets.CAIRN_DATABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.CAIRN_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.CAIRN_SUPABASE_ANON_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.CAIRN_ANTHROPIC_API_KEY }}
+          CRON_SECRET: ${{ secrets.CAIRN_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          sync() {
+            local name="$1" value="$2"
+            if [ -z "$value" ]; then
+              echo "skip  $name, no secret set"
+              return
+            fi
+            vercel env rm "$name" "$TARGET" --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf '%s' "$value" | vercel env add "$name" "$TARGET" --token "$VERCEL_TOKEN"
+            echo "set   $name"
+          }
+          sync DATABASE_URL "$DATABASE_URL"
+          sync NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
+          sync NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          sync ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
+          sync CRON_SECRET "$CRON_SECRET"
+
+      - name: Pull the project settings
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET: ${{ github.event.inputs.environment || 'production' }}
+        run: vercel pull --yes --environment="$TARGET" --token "$VERCEL_TOKEN"
+
+      - name: Build
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET: ${{ github.event.inputs.environment || 'production' }}
+        run: |
+          if [ "$TARGET" = "production" ]; then
+            vercel build --prod --token "$VERCEL_TOKEN"
+          else
+            vercel build --token "$VERCEL_TOKEN"
+          fi
+
+      - name: Deploy
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          TARGET: ${{ github.event.inputs.environment || 'production' }}
+        run: |
+          if [ "$TARGET" = "production" ]; then
+            url=$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN")
+          else
+            url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN")
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url"
+
+      - name: Summarise
+        run: |
+          {
+            echo "### Cairn deployed"
+            echo ""
+            echo "${{ steps.deploy.outputs.url }}"
+            echo ""
+            echo "If the site reports missing configuration, the secrets above are not all set."
+            echo "Migrations are a separate workflow and do not run on deploy."
+          } >> "$GITHUB_STEP_SUMMARY"

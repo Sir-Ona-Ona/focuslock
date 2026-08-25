@@ -141,6 +141,44 @@ Redeploy so the environment is picked up. Open the site, sign in with your
 email, and create the household. Your partner signs in with the address you
 gave and claims their own track.
 
+### Deploying from GitHub Actions instead
+
+Two workflows do the same thing without anyone running commands locally:
+`.github/workflows/cairn-deploy.yml` builds and deploys, and
+`.github/workflows/cairn-migrate.yml` applies migrations. Both are manual
+(`workflow_dispatch`); the deploy also runs on a push to `main` that touches
+`cairn/`.
+
+They exist because the Claude Code environment that builds Cairn cannot reach
+`api.vercel.com` or `api.supabase.com`: the network policy denies both. GitHub
+runners have no such restriction, and the credentials live in repository
+secrets rather than in a terminal history.
+
+Add these under Settings, Secrets and variables, Actions:
+
+| Secret | Used by | What |
+|--------|---------|------|
+| `VERCEL_TOKEN` | deploy | A Vercel API token. Scope it to the team and give it an expiry |
+| `CAIRN_DATABASE_URL` | deploy | The pooled connection, as `cairn_app`, port 6543 |
+| `CAIRN_SUPABASE_URL` | deploy | The Supabase project URL |
+| `CAIRN_SUPABASE_ANON_KEY` | deploy | The anon key |
+| `CAIRN_ANTHROPIC_API_KEY` | deploy | Optional. Facilitated reviews only |
+| `CAIRN_CRON_SECRET` | deploy | Optional until phase 6 |
+| `CAIRN_DIRECT_URL` | migrate | The owner connection, port 5432. Never goes to Vercel |
+| `CAIRN_APP_DB_PASSWORD` | migrate | The password to set on `cairn_app` |
+
+Optionally set the repository variable `VERCEL_PROJECT_NAME` if you want the
+Vercel project called something other than `cairn`.
+
+Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`. The
+migration workflow finishes by asserting that `cairn_app` cannot bypass row
+level security, and fails if it can.
+
+**One prerequisite:** GitHub only offers the Run workflow button for workflows
+that exist on the default branch, so these have to reach `main` before they can
+be dispatched. Merging the branch is the same step that a push-triggered deploy
+would need anyway.
+
 ### Scheduled routes
 
 Not registered in `vercel.json`, deliberately. They are no-ops until phase 6,

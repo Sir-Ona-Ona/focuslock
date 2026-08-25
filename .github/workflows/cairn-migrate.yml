@@ -1,0 +1,107 @@
+name: Migrate the Cairn database
+
+# Deliberately manual, and deliberately separate from the deploy.
+#
+# A deploy that rewrites the schema is a deploy that can lose a plan, so
+# migrations are never part of one. This runs when someone chooses to run it,
+# against the owner connection, and it is the only place that connection is
+# used besides a developer's own terminal.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type the word migrate to confirm
+        required: true
+        type: string
+
+concurrency:
+  group: cairn-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Apply migrations and seed the method
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cairn
+
+    steps:
+      - name: Check the confirmation
+        if: ${{ github.event.inputs.confirm != 'migrate' }}
+        run: |
+          echo "Not confirmed. Type migrate to run this."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cairn/.nvmrc
+          cache: npm
+          cache-dependency-path: cairn/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Apply
+        env:
+          DIRECT_URL: ${{ secrets.CAIRN_DIRECT_URL }}
+        run: |
+          if [ -z "$DIRECT_URL" ]; then
+            echo "CAIRN_DIRECT_URL is not set. It is the owner connection, on port 5432,"
+            echo "and it is used by migrations only. Never put it in the Vercel project."
+            exit 1
+          fi
+          npm run db:push
+
+      - name: Set the application role's password
+        env:
+          DIRECT_URL: ${{ secrets.CAIRN_DIRECT_URL }}
+          APP_PASSWORD: ${{ secrets.CAIRN_APP_DB_PASSWORD }}
+        run: |
+          if [ -z "$APP_PASSWORD" ]; then
+            echo "CAIRN_APP_DB_PASSWORD is not set, so cairn_app has no password yet."
+            echo "Set it, or run the ALTER ROLE by hand. The app cannot connect without it."
+            exit 0
+          fi
+          node -e '
+            const postgres = require("postgres");
+            const sql = postgres(process.env.DIRECT_URL, { max: 1 });
+            const pw = process.env.APP_PASSWORD;
+            sql.unsafe(
+              "alter role cairn_app with login password " + sql.unsafe("$$" + pw + "$$")
+            ).then(() => {
+              console.log("cairn_app can now log in.");
+              return sql.end();
+            }).catch(async (e) => {
+              console.error(e.message);
+              await sql.end();
+              process.exit(1);
+            });
+          '
+
+      - name: Confirm the application role cannot bypass row level security
+        env:
+          DIRECT_URL: ${{ secrets.CAIRN_DIRECT_URL }}
+        run: |
+          node -e '
+            const postgres = require("postgres");
+            const sql = postgres(process.env.DIRECT_URL, { max: 1 });
+            sql`select rolsuper, rolbypassrls from pg_roles where rolname = ${"cairn_app"}`
+              .then(async (rows) => {
+                const row = rows[0];
+                if (!row) throw new Error("cairn_app does not exist. Did the migrations run?");
+                if (row.rolsuper || row.rolbypassrls) {
+                  throw new Error("cairn_app can bypass row level security. Every policy would be ignored.");
+                }
+                console.log("cairn_app is scoped correctly.");
+                await sql.end();
+              })
+              .catch(async (e) => {
+                console.error(e.message);
+                await sql.end();
+                process.exit(1);
+              });
+          '
