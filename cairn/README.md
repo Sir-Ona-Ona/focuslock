@@ -190,7 +190,7 @@ Vercel dashboard.
 
 | Secret | Used by | What |
 |--------|---------|------|
-| `VERCEL_TOKEN` | deploy | A Vercel API token. Scope it to the team and give it an expiry |
+| `VERCEL_TOKEN` | deploy | A Vercel API token, scoped to the owning team. See the note on expiry below |
 | `CAIRN_DATABASE_URL` | deploy | The pooled connection, as `cairn_app`, port 6543 |
 | `CAIRN_SUPABASE_URL` | deploy | The Supabase project URL |
 | `CAIRN_SUPABASE_ANON_KEY` | deploy | The **publishable** key, beginning `sb_publishable_` |
@@ -203,6 +203,22 @@ Two optional entries go on the **Variables** tab of that same page rather than
 the Secrets tab, because neither is secret: `VERCEL_PROJECT_NAME` if you want
 the project called something other than `cairn`, and `VERCEL_TEAM` if the
 token's account has more than one team.
+
+**On the token's expiry.** An expired token behaves worse than an absent one.
+The deploy job is skipped when `VERCEL_TOKEN` is empty, but an expired token is
+not empty: the job runs and fails on authentication, so every push to `main`
+touching `cairn/` carries a red cross until it is rotated. Pick the expiry by
+how you intend to deploy. A few days if this pipeline is a one-off before
+switching to Vercel's own Git integration, ninety days with a rotation reminder
+if it is the deploy path, and not "no expiration", which is the credential
+nobody remembers until it leaks.
+
+Vercel's Git integration is the alternative worth knowing about: point it at
+this repository with the root directory set to `cairn` and it deploys on every
+push with no token to hold or rotate. Keep the verify job as CI if you do,
+because it runs the row level security suite that Vercel does not, and keep the
+migrate workflow, because Vercel never touches the schema. The trade is that
+Vercel deploys whether or not the tests pass, while this pipeline will not.
 
 Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`.
 
