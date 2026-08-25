@@ -1,0 +1,2677 @@
+<title>Cairn Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+<style>
+:root{
+  --ground:#F4F5F2; --surface:#FFFFFF; --surface-2:#EDEFEA; --surface-3:#E4E7E0;
+  --ink:#191E1C; --ink-muted:#5D6764; --ink-faint:#8A938F;
+  --rule:#DCE0DA; --rule-strong:#C3C9C0;
+  --brand:#35655C; --brand-soft:#E3EDEA;
+  --track-o:#2a78d6; --track-l:#eb6834; --track-j:#6B7370;
+  --st-good:#0ca30c; --st-warn:#fab219; --st-serious:#ec835a; --st-crit:#d03b3b;
+  --st-muted:#8A938F;
+  --shadow:0 1px 2px rgba(25,30,28,.05), 0 4px 14px rgba(25,30,28,.05);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --serif:"IBM Plex Serif",Georgia,serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#121614; --surface:#1B2220; --surface-2:#222B28; --surface-3:#2A3431;
+    --ink:#E4E8E4; --ink-muted:#A0AAA6; --ink-faint:#79837F;
+    --rule:#2E3835; --rule-strong:#3D4A46;
+    --brand:#6FA79B; --brand-soft:#22322E;
+    --track-o:#3987e5; --track-l:#d95926; --track-j:#97A19D;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121614; --surface:#1B2220; --surface-2:#222B28; --surface-3:#2A3431;
+  --ink:#E4E8E4; --ink-muted:#A0AAA6; --ink-faint:#79837F;
+  --rule:#2E3835; --rule-strong:#3D4A46;
+  --brand:#6FA79B; --brand-soft:#22322E;
+  --track-o:#3987e5; --track-l:#d95926; --track-j:#97A19D;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.shell>*{min-width:0}
+.side{border-right:1px solid var(--rule);background:var(--surface);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;min-width:0}
+.brandbar{padding:20px 20px 16px;border-bottom:1px solid var(--rule)}
+.wordmark{display:flex;align-items:center;gap:10px}
+.stack{display:flex;flex-direction:column;gap:2px}
+.stack i{display:block;height:2px;border-radius:2px;background:var(--brand)}
+.stack i:nth-child(1){width:18px;opacity:.45}
+.stack i:nth-child(2){width:13px;opacity:.75}
+.stack i:nth-child(3){width:8px}
+.wordmark b{font-family:var(--serif);font-size:1.22rem;font-weight:600;letter-spacing:-.01em}
+.tagline{font-family:var(--mono);font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-faint);margin-top:7px}
+nav.views{padding:12px 10px;display:flex;flex-direction:column;gap:1px;overflow-y:auto;flex:1;min-width:0}
+.navgrp{font-family:var(--mono);font-size:.63rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);padding:14px 10px 6px}
+.navbtn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;
+  border:0;padding:7px 10px;border-radius:6px;color:var(--ink-muted);font-size:.9rem}
+.navbtn:hover{background:var(--surface-2);color:var(--ink)}
+.navbtn[aria-current="true"]{background:var(--brand-soft);color:var(--ink);font-weight:500}
+.navbtn .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--ink-faint)}
+.navbtn .dot.o{background:var(--track-o)} .navbtn .dot.l{background:var(--track-l)}
+.navbtn .dot.j{background:var(--track-j)}
+.navbtn .cnt{margin-left:auto;font-family:var(--mono);font-size:.68rem;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+.navbtn .cnt.alert{color:var(--st-crit);font-weight:600}
+.sidefoot{padding:12px 14px;border-top:1px solid var(--rule);font-size:.68rem;color:var(--ink-faint);
+  line-height:1.4}
+
+.main{min-width:0;max-width:100%;display:flex;flex-direction:column;overflow-x:hidden}
+.topbar{display:flex;align-items:center;gap:14px;padding:13px 26px;border-bottom:1px solid var(--rule);
+  background:var(--surface);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.vlabel{font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:7px;padding:2px;gap:2px}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:5px;font-size:.83rem;
+  color:var(--ink-muted);display:inline-flex;align-items:center;gap:7px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:500;
+  box-shadow:0 1px 2px rgba(0,0,0,.07)}
+.seg .dot{width:7px;height:7px;border-radius:50%}
+.sample{margin-left:auto;font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-faint);border:1px solid var(--rule);
+  padding:3px 9px;border-radius:20px}
+.wrap{padding:26px;max-width:1180px;width:100%;min-width:0}
+
+/* ---------- generic ---------- */
+h1.page{font-family:var(--serif);font-weight:600;font-size:1.7rem;letter-spacing:-.015em;margin:0 0 4px}
+.lede{color:var(--ink-muted);font-size:.93rem;margin:0 0 24px;max-width:64ch}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px 20px;
+  box-shadow:var(--shadow);min-width:0}
+.cardhd{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.cardhd h2{font-size:.95rem;font-weight:600;margin:0}
+.cardhd .sub{font-family:var(--mono);font-size:.63rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-faint);margin-left:auto}
+.grid{display:grid;gap:16px;min-width:0}
+.grid>*{min-width:0}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.stackv{display:flex;flex-direction:column;gap:16px}
+.ref{font-family:var(--mono);font-size:.7rem;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-muted)}
+.faint{color:var(--ink-faint)}
+.tiny{font-size:.78rem}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+
+/* ---------- status ---------- */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:500;
+  padding:2px 9px 2px 7px;border-radius:20px;border:1px solid var(--rule-strong);
+  background:var(--surface-2);color:var(--ink-muted);white-space:nowrap}
+.pill .sw{width:8px;height:8px;border-radius:50%;background:var(--st-muted);flex:0 0 auto}
+.pill[data-s="on_track"] .sw{background:var(--st-good)}
+.pill[data-s="at_risk"] .sw{background:var(--st-warn)}
+.pill[data-s="slipped"] .sw{background:var(--st-crit)}
+.pill[data-s="blocked"] .sw{background:transparent;border:2px solid var(--st-serious)}
+.pill[data-s="done"] .sw{background:var(--st-muted)}
+.pill[data-s="parked"] .sw{background:transparent;border:2px solid var(--st-muted)}
+.pill[data-s="dropped"] .sw{background:transparent;border:2px solid var(--st-muted)}
+.pill[data-s="slipped"],.pill[data-s="blocked"]{border-color:var(--st-crit);color:var(--ink)}
+.pill.unconf{border-style:dashed;border-color:var(--ink-faint)}
+.pill.conf{border-color:var(--st-good)}
+.pill.priv{border-style:dashed}
+
+/* ---------- tables ---------- */
+table.dt{border-collapse:collapse;width:100%;font-size:.86rem}
+table.dt th{font-family:var(--mono);font-size:.64rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-faint);font-weight:500;text-align:left;padding:0 14px 8px 0;
+  border-bottom:1px solid var(--rule-strong);white-space:nowrap}
+table.dt td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);vertical-align:top;
+  color:var(--ink-muted);font-variant-numeric:tabular-nums}
+table.dt tr:last-child td{border-bottom:0}
+table.dt td.nm{color:var(--ink)}
+table.dt tr.ghost td{opacity:.5}
+
+/* ---------- domain blocks ---------- */
+.dom{border:1px solid var(--rule);border-radius:10px;background:var(--surface);overflow:hidden;min-width:0}
+.dom+.dom{margin-top:10px}
+.domhd{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;
+  padding:13px 18px;text-align:left}
+.domhd:hover{background:var(--surface-2)}
+.domcode{font-family:var(--mono);font-size:.66rem;font-weight:600;letter-spacing:.09em;
+  color:var(--brand);width:30px;flex:0 0 auto}
+.domname{font-weight:500;font-size:.92rem}
+.dommeta{margin-left:auto;display:flex;align-items:center;gap:10px}
+.chev{color:var(--ink-faint);font-size:.75rem;transition:transform .15s}
+.dom[data-open="true"] .chev{transform:rotate(90deg)}
+.dombody{padding:2px 18px 18px;border-top:1px solid var(--rule);display:none;min-width:0}
+.dom[data-open="true"] .dombody{display:block}
+.sect{margin-top:16px}
+.secth{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:8px}
+.goalrow{display:flex;gap:10px;font-size:.86rem;padding:4px 0;color:var(--ink-muted)}
+.goalrow b{font-family:var(--mono);font-size:.64rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-faint);min-width:42px;padding-top:2px}
+.privrow{display:flex;align-items:center;gap:9px;font-size:.82rem;color:var(--ink-faint);
+  padding:9px 11px;border:1px dashed var(--rule-strong);border-radius:7px;margin-top:10px;
+  background:var(--surface-2)}
+.itemline{font-size:.83rem;color:var(--ink-muted);padding:5px 0;display:flex;gap:9px}
+.itemline .ref{flex:0 0 auto;padding-top:1px}
+.movehist{font-size:.73rem;color:var(--st-crit);font-family:var(--mono)}
+
+/* ---------- buttons ---------- */
+.btn{border:1px solid var(--rule-strong);background:var(--surface);border-radius:7px;
+  padding:5px 12px;font-size:.8rem;color:var(--ink)}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+:root[data-theme="dark"] .btn.pri,
+:root:not([data-theme="light"]) .btn.pri{color:#0F1614}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn.pri{color:#fff}}
+.btn.pri:hover{opacity:.9;background:var(--brand)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:3px 9px;font-size:.74rem}
+.why{font-size:.73rem;color:var(--ink-faint);margin-top:5px;max-width:34ch}
+
+/* ---------- stat tiles ---------- */
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:15px 17px;
+  box-shadow:var(--shadow)}
+.tile .k{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.tile .v{font-family:var(--serif);font-size:1.85rem;line-height:1.1;margin-top:7px;
+  font-variant-numeric:tabular-nums}
+.tile .n{font-size:.78rem;color:var(--ink-muted);margin-top:5px}
+.tile .v.alert{color:var(--st-crit)}
+.tile .v.warn{color:var(--ink)}
+
+/* ---------- meter ---------- */
+.meter{height:9px;border-radius:5px;background:var(--surface-3);overflow:hidden;display:flex;
+  margin-top:9px}
+.meter span{display:block;height:100%}
+.meter span+span{border-left:2px solid var(--surface)}
+.ceilmark{position:relative;height:14px;margin-top:3px}
+.ceilmark i{position:absolute;top:0;width:2px;height:8px;background:var(--ink)}
+.ceilmark em{position:absolute;top:0;font-family:var(--mono);font-size:.64rem;color:var(--ink-muted);
+  font-style:normal;transform:translateX(-50%);white-space:nowrap;padding-top:9px}
+
+/* ---------- timeline ---------- */
+.tlbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.72rem;color:var(--ink-muted);
+  align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lgsw{width:9px;height:9px;border-radius:50%}
+.tlhost{border:1px solid var(--rule);border-radius:10px;background:var(--surface);
+  box-shadow:var(--shadow);overflow-x:auto;max-width:100%}
+.tip{position:fixed;pointer-events:none;z-index:60;background:var(--surface);
+  border:1px solid var(--rule-strong);border-radius:8px;padding:9px 12px;box-shadow:var(--shadow);
+  font-size:.78rem;max-width:270px;opacity:0;transition:opacity .1s;line-height:1.45}
+.tip b{display:block;font-size:.83rem;margin-bottom:3px}
+.tip .r{font-family:var(--mono);font-size:.66rem;color:var(--ink-faint)}
+
+/* ---------- decision ---------- */
+.wgrid{width:100%;border-collapse:collapse;font-size:.84rem;min-width:640px}
+.wgrid th,.wgrid td{padding:9px 12px;border-bottom:1px solid var(--rule);text-align:left;
+  font-variant-numeric:tabular-nums}
+.wgrid th{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);font-weight:500;border-bottom:1px solid var(--rule-strong)}
+.wgrid td.num{text-align:right;font-family:var(--mono);font-size:.8rem}
+.wgrid tr.tot td{border-top:1px solid var(--rule-strong);border-bottom:0;font-weight:600;
+  color:var(--ink);padding-top:12px}
+/* the criterion name is the column that must survive horizontal scroll */
+.wgrid th:first-child,.wgrid td:first-child{position:sticky;left:0;z-index:1;
+  background:var(--surface);box-shadow:1px 0 0 var(--rule)}
+table.dt th:first-child,table.dt td:first-child{background:var(--surface)}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.wcell{display:flex;align-items:center;gap:9px;min-width:150px}
+.wcell output{font-family:var(--mono);font-size:.76rem;width:26px;text-align:right;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.budget{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint)}
+.budget.over{color:var(--st-warn);font-weight:600}
+.winner{border-left:3px solid var(--brand);padding-left:13px;margin-top:4px}
+.nocombine{border:1px dashed var(--rule-strong);border-radius:8px;padding:11px 14px;
+  font-size:.78rem;color:var(--ink-muted);background:var(--surface-2);margin-top:14px}
+
+/* ---------- session ---------- */
+.blocks{display:flex;flex-direction:column;gap:3px}
+.blk{display:grid;grid-template-columns:26px 1fr auto;gap:11px;align-items:center;
+  padding:9px 12px;border-radius:7px;border:1px solid transparent;font-size:.86rem}
+.blk .bn{font-family:var(--mono);font-size:.68rem;color:var(--ink-faint)}
+.blk .bm{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+.blk[data-k="break"]{background:var(--surface-2);color:var(--ink-muted);font-style:italic}
+.blk[data-k="cur"]{background:var(--brand-soft);border-color:var(--brand);font-weight:500}
+.blk[data-k="done"]{opacity:.5}
+.gateline{display:flex;align-items:center;gap:10px;margin:7px 0;padding:8px 12px;
+  border:1px dashed var(--rule-strong);border-radius:7px;font-size:.79rem;color:var(--ink-muted);
+  background:var(--surface-2)}
+.gateline .ref{color:var(--ink)}
+.transcript{border:1px solid var(--rule);border-radius:9px;background:var(--surface-2);padding:15px 17px;
+  font-size:.86rem;display:flex;flex-direction:column;gap:12px;min-width:0}
+.turn p{min-width:0;overflow-wrap:anywhere}
+.turn{display:flex;gap:11px}
+.turn .who{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);flex:0 0 54px;padding-top:3px}
+.turn p{margin:0;color:var(--ink-muted)}
+.turn.sys p{color:var(--ink)}
+
+/* ---------- findings ---------- */
+.find{border:1px solid var(--rule);border-left:3px solid var(--ink-faint);border-radius:9px;
+  background:var(--surface);padding:16px 18px;box-shadow:var(--shadow)}
+.find+.find{margin-top:12px}
+.find[data-k="pattern"]{border-left-color:var(--track-o)}
+.find[data-k="critique"]{border-left-color:var(--brand)}
+.find[data-k="scenario"]{border-left-color:var(--track-j)}
+.find[data-k="reference"]{border-left-color:var(--st-serious);border-style:dashed;
+  border-left-style:solid;background:var(--surface-2)}
+.findhd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+.kindtag{font-family:var(--mono);font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;
+  padding:2px 8px;border-radius:4px;background:var(--surface-2);color:var(--ink-muted);
+  border:1px solid var(--rule-strong)}
+.find[data-k="reference"] .kindtag{background:var(--st-serious);color:#241009;border-color:transparent}
+.sev{margin-left:auto;font-family:var(--mono);font-size:.66rem;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+.fline{display:grid;grid-template-columns:104px 1fr;gap:12px;padding:6px 0;font-size:.86rem;
+  align-items:start}
+.fline dt{font-family:var(--mono);font-size:.63rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-faint);padding-top:4px}
+.fline dd{margin:0;color:var(--ink-muted)}
+.fline.obs dd{color:var(--ink)}
+.fline.read dd{border-left:2px solid var(--rule-strong);padding-left:11px;font-style:italic}
+.fline.dis dd{color:var(--ink-muted)}
+.refbox{border:1px solid var(--st-serious);border-radius:7px;padding:11px 13px;margin-top:11px;
+  font-size:.8rem;display:flex;flex-direction:column;gap:7px;background:var(--surface)}
+.refbox b{font-family:var(--mono);font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--st-serious)}
+.dismiss{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;padding-top:13px;
+  border-top:1px solid var(--rule)}
+.quiet{border:1px dashed var(--rule-strong);border-radius:8px;padding:13px 15px;
+  font-size:.8rem;color:var(--ink-muted);background:var(--surface-2)}
+.banner{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--rule-strong);
+  border-left:3px solid var(--track-o);border-radius:9px;background:var(--surface);
+  padding:14px 16px;margin-bottom:20px;box-shadow:var(--shadow)}
+
+/* ---------- money grid ---------- */
+.mgrid{display:flex;gap:2px;align-items:stretch;min-width:680px;padding-top:8px}
+.mcol{flex:1;display:flex;flex-direction:column;min-width:22px}
+.mstack{flex:0 0 152px;height:152px;position:relative;display:flex;flex-direction:column;
+  justify-content:flex-end}
+.mbar{width:100%;border-radius:3px 3px 0 0;background:var(--track-j);opacity:.45}
+.mbar.over{background:var(--st-crit);opacity:.9}
+.mbar.one{background:var(--track-o);opacity:.75;border-radius:3px 3px 0 0;margin-bottom:1px}
+.mline{position:absolute;left:0;right:0;height:2px;background:var(--ink);z-index:2}
+.mlab{font-family:var(--mono);font-size:.58rem;color:var(--ink-faint);text-align:center;
+  padding-top:5px;white-space:nowrap}
+.mlab.hit{color:var(--st-crit);font-weight:600}
+.shortrow{display:grid;grid-template-columns:84px 62px 62px 96px 1fr;gap:12px;padding:10px 0;
+  border-bottom:1px solid var(--rule);font-size:.85rem;align-items:baseline}
+.shortrow .n,.shortrow .gap{white-space:nowrap}
+.shortrow b{font-family:var(--mono);font-size:.78rem}
+.shortrow .n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.shortrow .gap{color:var(--st-crit);font-weight:600}
+
+/* ---------- advisory review ---------- */
+.runbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border:1px solid var(--rule);
+  border-radius:10px;background:var(--surface);padding:15px 18px;box-shadow:var(--shadow);
+  margin-bottom:20px}
+.rsec{border-top:1px solid var(--rule);padding-top:20px;margin-top:20px}
+.rsec:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.rsecn{display:flex;align-items:baseline;gap:11px;margin-bottom:11px}
+.rsecn span{font-family:var(--mono);font-size:.66rem;color:var(--brand);font-weight:600}
+.rsecn h3{margin:0;font-size:1.02rem;font-weight:600}
+.verdict{font-family:var(--serif);font-size:1.16rem;line-height:1.5;color:var(--ink);
+  border-left:3px solid var(--brand);padding-left:16px}
+.act{display:grid;grid-template-columns:26px 1fr;gap:13px;padding:14px 0;
+  border-bottom:1px solid var(--rule)}
+.act:last-child{border-bottom:0}
+.act .rk{font-family:var(--serif);font-size:1.25rem;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+.act h4{margin:0 0 6px;font-size:.95rem;font-weight:600}
+.actmeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px 20px;
+  margin-top:9px}
+.actmeta div{font-size:.79rem;color:var(--ink-muted)}
+.actmeta b{font-family:var(--mono);font-size:.62rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-faint);display:block}
+.actbtns{display:flex;gap:7px;margin-top:11px}
+.traced{font-family:var(--mono);font-size:.68rem;color:var(--ink-faint);border-top:1px dashed var(--rule);
+  padding-top:9px;margin-top:14px}
+
+/* ---------- detail sheet: tap and keyboard path for the timeline ---------- */
+.sheet{position:fixed;z-index:70;background:var(--surface);border:1px solid var(--rule-strong);
+  border-radius:11px;padding:16px 18px;box-shadow:0 8px 34px rgba(0,0,0,.16);max-width:330px;
+  font-size:.87rem;line-height:1.5}
+.sheet[hidden]{display:none}
+.sheet h4{margin:0 0 3px;font-size:.95rem}
+.sheet .close{position:absolute;top:9px;right:10px;border:0;background:none;
+  color:var(--ink-faint);font-size:1rem;line-height:1;padding:4px 6px;border-radius:5px}
+.sheet .close:hover{background:var(--surface-2);color:var(--ink)}
+@media (max-width:700px){
+  .sheet{left:0!important;right:0!important;bottom:0!important;top:auto!important;
+    max-width:none;border-radius:14px 14px 0 0;border-bottom:0;padding:20px 20px 26px}
+}
+.hit{cursor:pointer}
+.hit:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* ---------- home ---------- */
+.nextrow{display:flex;gap:14px;align-items:flex-start;padding:12px 0;
+  border-bottom:1px solid var(--rule)}
+.nextrow:last-of-type{border-bottom:0}
+.nrk{font-family:var(--serif);font-size:1.2rem;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;flex:0 0 18px}
+.sigrow{display:grid;grid-template-columns:132px 1fr;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--rule);font-size:.86rem;color:var(--ink-muted);align-items:start}
+.sigrow:last-child{border-bottom:0}
+.sigk{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);border:1px solid var(--rule-strong);border-radius:4px;
+  padding:3px 7px;text-align:center;background:var(--surface-2)}
+.hstat{display:flex;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--rule)}
+.hstat:last-child{border-bottom:0}
+.hstat b{font-family:var(--serif);font-size:1.3rem;min-width:52px;font-variant-numeric:tabular-nums}
+.hstat b.warn{color:var(--st-warn)}
+.hstat span{font-size:.86rem;color:var(--ink-muted)}
+
+/* ---------- method ---------- */
+.mrow{padding:14px 0;border-bottom:1px solid var(--rule)}
+.mrow:last-child{border-bottom:0}
+.mhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mlabel{font-weight:600;font-size:.92rem}
+.mval{font-family:var(--mono);font-size:.8rem;color:var(--brand);
+  background:var(--brand-soft);padding:2px 8px;border-radius:5px}
+.mwhy{font-size:.83rem;color:var(--ink-muted);margin-top:7px;max-width:74ch;line-height:1.5}
+.mprotect{font-size:.79rem;color:var(--ink-muted);margin-top:8px;padding:9px 12px;
+  border-left:2px solid var(--st-warn);background:var(--surface-2);border-radius:0 6px 6px 0}
+.mprotect b{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.mform{margin-top:13px;padding:15px 16px;border:1px solid var(--brand);border-radius:9px;
+  background:var(--surface-2)}
+.warnbox{border:1px solid var(--st-warn);border-radius:7px;padding:12px 14px;margin-bottom:14px;
+  font-size:.83rem;color:var(--ink);background:var(--surface);line-height:1.5}
+
+/* ---------- inline forms ---------- */
+.fld{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fld span{font-family:var(--mono);font-size:.64rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.fld input,.fld select{font:inherit;font-size:.87rem;padding:8px 11px;border-radius:7px;
+  border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink);width:100%}
+
+/* ---------- log ---------- */
+.logrow{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--rule);font-size:.84rem}
+.logrow:last-child{border-bottom:0}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule)}
+  .brandbar{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .tagline{display:none}
+  nav.views{flex-direction:row;overflow-x:auto;gap:4px;padding:9px 12px}
+  .navgrp{display:none}
+  .navbtn{white-space:nowrap;width:auto;padding:6px 11px}
+  .navbtn .cnt{margin-left:6px}
+  .sidefoot{display:none}
+  .wrap{padding:18px 15px 60px}
+  .topbar{padding:11px 15px}
+}
+@media (max-width:640px){
+  body{font-size:15.5px}
+  .cardhd .sub{margin-left:0;width:100%}
+  .wgrid{min-width:520px}
+  .sigrow{grid-template-columns:1fr;gap:6px}
+  .sigk{justify-self:start}
+  .shortrow{grid-template-columns:76px 58px 58px 84px;gap:9px}
+  .shortrow span:last-child{grid-column:1/-1;padding-top:2px}
+  h1.page{font-size:1.45rem}
+}
+</style>
+<div class="shell">
+  <aside class="side">
+    <div class="brandbar">
+      <div>
+        <div class="wordmark">
+          <div class="stack" aria-hidden="true"><i></i><i></i><i></i></div>
+          <b>Cairn</b>
+        </div>
+        <div class="tagline">Household plan</div>
+      </div>
+    </div>
+    <nav class="views" id="nav" aria-label="Sections"></nav>
+    <div class="sidefoot">
+      Clickable prototype. Sample data, no server. Nothing here is a real commitment.
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="vlabel">Viewing as</span>
+      <div class="seg" id="viewerseg" role="group" aria-label="Viewer"></div>
+      <span class="sample">Sample data</span>
+    </div>
+    <div class="wrap" id="view"></div>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip" aria-hidden="true"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="false" aria-label="Item detail" hidden></div>
+
+<script>
+/* ===================== SAMPLE DATA ===================== */
+const TODAY = new Date(2026, 7, 25);          // 2026-08-25, fixed so the prototype is stable
+const MEMBERS = {
+  o: {id:'o', name:'Ona',   role:'principal', color:'var(--track-o)'},
+  l: {id:'l', name:'Leroo', role:'principal', color:'var(--track-l)'}
+};
+const DOMAINS = [
+  {code:'FTH', short:'Faith',      name:'Faith, values, community, legacy'},
+  {code:'FAM', short:'Family',     name:'Family, marriage, children'},
+  {code:'FIN', short:'Finance',    name:'Finance, investment, property'},
+  {code:'CAR', short:'Career',     name:'Career and professional trajectory'},
+  {code:'REL', short:'Relocation', name:'Relocation and mobility'},
+  {code:'LRN', short:'Learning',   name:'Learning, credentials, capability'},
+  {code:'HLT', short:'Health',     name:'Health, energy, sustainability'}
+];
+const AGREE = {
+  proposed:{label:'Proposed', hint:'One principal entered it. Not yet part of the plan.'},
+  agreed  :{label:'Agreed',   hint:'Both confirmed it belongs in the plan.'},
+  active  :{label:'Active',   hint:'Agreed and currently being worked.'}
+};
+const STATUS = {
+  on_track:{label:'On track', c:'var(--st-good)', fill:true},
+  at_risk :{label:'At risk',  c:'var(--st-warn)', fill:true},
+  slipped :{label:'Slipped',  c:'var(--st-crit)', fill:true},
+  blocked :{label:'Blocked',  c:'var(--st-serious)', fill:false},
+  done    :{label:'Done',     c:'var(--st-muted)', fill:true},
+  parked  :{label:'Parked',   c:'var(--st-muted)', fill:false},
+  dropped :{label:'Dropped',  c:'var(--st-muted)', fill:false},
+  proposed:{label:'Proposed',  c:'var(--ink-faint)', fill:false}
+};
+/* execution status only applies once both principals agree the item exists */
+const execOf = m => (m.t === 'j' && m.agree === 'proposed') ? 'proposed' : m.s;
+
+/* milestones: t = track (o|l|j) */
+const M = [
+  // ---- FTH
+  {id:'M-J-FTH-01', t:'j', d:'FTH', title:'Agree how children are raised in faith', target:'2026-11', s:'at_risk', agree:'proposed', by:'l',
+   note:'raised by Leroo, Ona has not taken a position yet', hist:[{e:'Proposed', who:'l', at:'2026-07-04'}]},
+  {id:'M-O-FTH-01', t:'o', d:'FTH', title:'Fixed weekly community commitment held for 3 months', target:'2026-12', s:'on_track'},
+  {id:'M-L-FTH-01', t:'l', d:'FTH', title:'Decide level of involvement after the move', target:'2027-06', s:'parked',
+   note:'parked until the relocation gate closes'},
+  // ---- FAM
+  {id:'M-J-FAM-01', t:'j', d:'FAM', title:'Wedding', target:'2026-09', s:'on_track', agree:'active', hist:[{e:'Proposed', who:'o', at:'2026-05-02'},{e:'Agreed', who:'l', at:'2026-05-19'}]},
+  {id:'M-J-FAM-02', t:'j', d:'FAM', title:'First child window opens', target:'2028-01', s:'at_risk', agree:'proposed', by:'o',
+   note:'Ona has 2028, Leroo has not confirmed', hist:[{e:'Proposed', who:'o', at:'2026-07-04'}]},
+  {id:'M-O-FAM-01', t:'o', d:'FAM', title:'Settle support arrangement for parents', target:'2027-03', s:'on_track'},
+  {id:'M-L-FAM-01', t:'l', d:'FAM', title:'Agree family visit cadence post-move', target:'2027-09', s:'on_track'},
+  // ---- FIN
+  {id:'M-J-FIN-01', t:'j', d:'FIN', title:'Property decision: buy, rent, or defer', target:'2026-12', s:'slipped', agree:'active',
+   moves:['2026-09','2026-10','2026-12'], note:'moved twice, comparison still not drafted', hist:[{e:'Proposed', who:'o', at:'2026-05-02'},{e:'Agreed', who:'l', at:'2026-05-19'}]},
+  {id:'M-J-FIN-02', t:'j', d:'FIN', title:'Education fund first contribution', target:'2027-01', s:'at_risk', agree:'agreed',
+   note:'collides with relocation costs in the same year', hist:[{e:'Proposed', who:'o', at:'2026-05-02'},{e:'Agreed', who:'l', at:'2026-05-19'}]},
+  {id:'M-J-FIN-03', t:'j', d:'FIN', title:'Six month reserve fully funded', target:'2027-06', s:'on_track', agree:'active', hist:[{e:'Proposed', who:'o', at:'2026-05-02'},{e:'Agreed', who:'l', at:'2026-05-19'}]},
+  {id:'M-O-FIN-01', t:'o', d:'FIN', title:'Restructure personal buckets to 3 from 6', target:'2026-10', s:'on_track'},
+  {id:'M-L-FIN-01', t:'l', d:'FIN', title:'Independent reserve at 4 months', target:'2027-02', s:'on_track'},
+  // ---- CAR
+  {id:'M-O-CAR-01', t:'o', d:'CAR', title:'Ship Akili module 1 as portfolio evidence', target:'2026-11', s:'at_risk',
+   note:'competing with TCF prep for the same evenings'},
+  {id:'M-O-CAR-02', t:'o', d:'CAR', title:'First HRTech PM interview loop', target:'2027-06', s:'on_track'},
+  {id:'M-O-CAR-03', t:'o', d:'CAR', title:'PM role secured', target:'2028-06', s:'blocked',
+   note:'blocked on M-O-CAR-02 and on where we are living'},
+  {id:'M-L-CAR-01', t:'l', d:'CAR', title:'Move into senior CX research role', target:'2027-03', s:'on_track'},
+  {id:'M-L-CAR-02', t:'l', d:'CAR', title:'Research role secured in-market', target:'2028-09', s:'at_risk',
+   note:'in-market search cannot start before the move date is fixed'},
+  {id:'M-L-CAR-03', t:'l', d:'CAR', title:'Portfolio rebuilt for overseas market', target:'2027-08', s:'on_track'},
+  // ---- REL
+  {id:'M-J-REL-01', t:'j', d:'REL', title:'Commit or close the Canada route', target:'2027-03', s:'at_risk', agree:'proposed', by:'o',
+   note:'this is gate G-01', hist:[{e:'Proposed', who:'o', at:'2026-07-04'}]},
+  {id:'M-J-REL-02', t:'j', d:'REL', title:'Application filed', target:'2027-09', s:'blocked', agree:'proposed', by:'o',
+   note:'blocked on the commit decision and on the language result', hist:[{e:'Proposed', who:'o', at:'2026-07-04'}]},
+  {id:'M-J-REL-03', t:'j', d:'REL', title:'Land, if committed', target:'2028-06', s:'parked', agree:'proposed', by:'o',
+   note:'parked until G-01 closes', hist:[{e:'Proposed', who:'o', at:'2026-07-04'}]},
+  // ---- LRN
+  {id:'M-O-LRN-01', t:'o', d:'LRN', title:'TCF Canada sitting, target band B2', target:'2026-11', s:'on_track',
+   note:'booked for 2026-11-14'},
+  {id:'M-O-LRN-02', t:'o', d:'LRN', title:'Product management foundations, evidenced', target:'2027-04', s:'at_risk'},
+  {id:'M-L-LRN-01', t:'l', d:'LRN', title:'MBA, University of Lagos, complete', target:'2028-03', s:'on_track',
+   moves:['2027-09','2028-03'], note:'moved once when the wedding date landed'},
+  {id:'M-L-LRN-02', t:'l', d:'LRN', title:'Qualitative research certification', target:'2027-01', s:'on_track'},
+  // ---- HLT
+  {id:'M-O-HLT-01', t:'o', d:'HLT', title:'Weekly load back under ceiling for 8 weeks', target:'2026-12', s:'slipped',
+   moves:['2026-08','2026-10','2026-12'], note:'moved twice; the load has not come down'},
+  {id:'M-L-HLT-01', t:'l', d:'HLT', title:'Protected recovery day held weekly', target:'2026-10', s:'on_track'}
+];
+
+const PRIVATE = {   // owner -> domain -> count (contents never rendered to the other member)
+  o:{CAR:2, HLT:1},
+  l:{CAR:1, FAM:1, FTH:1}
+};
+
+const GOALS = {
+  o:{FTH:['Hold the weekly commitment without exception','Be accountable to someone outside the household','Give at a level that is decided, not left over'],
+     CAR:['Ship one piece of real product evidence','Run a full PM interview loop','Be in an HRTech PM seat'],
+     LRN:['B2 in French','PM foundations evidenced, not just studied','Depth in one technical area'],
+     HLT:['Get the week under the ceiling','Hold two fixed recovery anchors','Stop trading sleep for shipping']},
+  l:{FTH:['Keep practice steady through a year of change','Decide involvement deliberately after any move'],
+     CAR:['Senior CX research role','Portfolio that travels','Research role in whichever market we land in'],
+     LRN:['MBA finished','Qualitative certification','Stop collecting, start applying'],
+     HLT:['One protected day a week','Protect it through the wedding period','Keep the MBA from eating recovery']},
+  j:{FTH:['Agree what we will not trade, in writing'],
+     FAM:['Married','A first year that is actually shared','Children on a timeline we both chose'],
+     FIN:['One ranked set of buckets, not three competing claims','A property decision, not a property conversation'],
+     REL:['Decide Canada rather than keep it open','If we go, both of us land well']}
+};
+
+const LOAD = {
+  o:{FTH:4, FAM:6, FIN:2, CAR:46, REL:2, LRN:9, ceiling:58, signal:'skipping the recovery anchors two weeks running'},
+  l:{FTH:3, FAM:7, FIN:1, CAR:42, REL:1, LRN:12, ceiling:62, signal:'MBA reading slipping to the weekend'}
+};
+
+/* money: what comes in, what goes out, when. Figures are illustrative, in NGN thousands
+   per month unless marked one-off. */
+const MONEY = {
+  reportingCurrency:'NGN',
+  fx:{ 'CAD':1180 },                       // the assumption A-J-FIN-02 governs
+  income:{
+    o:[{label:'Salary, Moniepoint', kind:'salary', monthly:2450, cur:'NGN', conf:'high'}],
+    l:[{label:'Salary, current role', kind:'salary', monthly:1180, cur:'NGN', conf:'high'},
+       {label:'Senior CX role uplift', kind:'salary', monthly:520, cur:'NGN', conf:'medium',
+        assumed:true, builtBy:'M-L-CAR-01', from:'2027-03'}]
+  },
+  reserve:{ o:{amount:7300, months:4.1, target:6}, l:{amount:3900, months:5.2, target:6} },
+  // kind: 'rec' recurring monthly, 'one' one-off landing in that month
+  obligations:[
+    {t:'j', d:'FAM', label:'Wedding, balance',            kind:'one', amount:6800, on:'2026-09', committed:true},
+    {t:'j', d:'FAM', label:'Household running costs',     kind:'rec', amount:1450, from:'2026-09', committed:true},
+    {t:'j', d:'FIN', label:'Education fund contribution', kind:'rec', amount:620,  from:'2027-01', committed:true, ms:'M-J-FIN-02'},
+    {t:'j', d:'FIN', label:'Property deposit',            kind:'one', amount:14500, on:'2027-02', committed:false, ms:'M-J-FIN-01'},
+    {t:'j', d:'FIN', label:'Reserve top-up to 6 months',  kind:'rec', amount:380,  from:'2026-10', committed:false, ms:'M-J-FIN-03'},
+    {t:'j', d:'REL', label:'Application and legal fees',  kind:'one', amount:4300, on:'2027-03', committed:false, ms:'M-J-REL-02', cur:'CAD', amountCur:3.64},
+    {t:'j', d:'REL', label:'Relocation and settling',     kind:'one', amount:9400, on:'2028-06', committed:false, ms:'M-J-REL-03', cur:'CAD', amountCur:7.96},
+    {t:'o', d:'LRN', label:'TCF sitting and prep',        kind:'one', amount:420,  on:'2026-11', committed:true,  ms:'M-O-LRN-01'},
+    {t:'o', d:'FAM', label:'Support to parents',          kind:'rec', amount:350,  from:'2026-01', committed:true},
+    {t:'o', d:'FTH', label:'Giving',                      kind:'rec', amount:245,  from:'2026-01', committed:true},
+    {t:'l', d:'LRN', label:'MBA fees',                    kind:'rec', amount:540,  from:'2026-10', endsOn:'2028-03', committed:true, ms:'M-L-LRN-01'},
+    {t:'l', d:'FTH', label:'Giving',                      kind:'rec', amount:118,  from:'2026-01', committed:true}
+  ]
+};
+
+const DEPS = [
+  {from:'M-O-LRN-01', to:'M-J-REL-02', nature:'hard', note:'application cannot open until the language result lands'},
+  {from:'M-J-REL-01', to:'M-J-REL-02', nature:'hard', note:'no filing before the commit decision'},
+  {from:'M-J-REL-02', to:'M-J-REL-03', nature:'hard', note:''},
+  {from:'M-L-CAR-03', to:'M-L-CAR-02', nature:'soft', note:'in-market search is materially harder without the portfolio'},
+  {from:'M-J-REL-01', to:'M-L-CAR-02', nature:'hard', note:'her market is not known until the route is decided'},
+  {from:'M-J-REL-01', to:'M-O-CAR-03', nature:'soft', note:'the PM market differs sharply by geography'},
+  {from:'M-J-FIN-01', to:'M-J-FIN-02', nature:'soft', note:'a purchase pushes the first contribution out'}
+];
+
+const COLLISIONS = [
+  {id:'X-01', tension:'Both careers want the same 2027 to 2029 window to land a step up',
+   tracks:['o','l'], domains:['CAR','REL'], from:'2027-01', to:'2029-06', kind:'weighting',
+   status:'open', opened:'2026-05-18'},
+  {id:'X-02', tension:'Education fund, property, and relocation costs all claim 2027',
+   tracks:['j'], domains:['FIN','REL'], from:'2027-01', to:'2027-12', kind:'information',
+   status:'open', opened:'2026-07-02'},
+  {id:'X-03', tension:'First child window overlaps the year after landing',
+   tracks:['j'], domains:['FAM','REL'], from:'2028-01', to:'2028-12', kind:'values',
+   status:'open', opened:'2026-08-11'}
+];
+
+const GATES = [
+  {id:'G-01', title:'Canada route decision', by:'2027-03', tracks:['o','l','j'],
+   domains:['REL','FIN','CAR'], brief:'D-05',
+   outcomes:['Commit','Close','Stage with a hard review date']},
+  {id:'G-02', title:'Property decision', by:'2026-12', tracks:['j'], domains:['FIN'], brief:null,
+   outcomes:['Buy','Rent','Defer with a hard review date']}
+];
+
+const ASSUMPTIONS = [
+  {id:'A-O-REL-01', track:'o', d:'REL', text:'A B2 band is enough for the route we are looking at',
+   conf:'medium', testBy:'2026-08-31', state:'expired', carries:['M-J-REL-02','M-J-REL-03'], cycles:3},
+  {id:'A-J-FIN-02', track:'j', d:'FIN', text:'Naira income holds within 15 percent of today through 2027',
+   conf:'low', testBy:'2026-10-31', state:'open', carries:['M-J-FIN-02','M-J-FIN-03'], cycles:0},
+  {id:'A-L-CAR-01', track:'l', d:'CAR', text:'Research roles in-market are open to someone without local experience',
+   conf:'low', testBy:'2026-09-30', state:'open', carries:['M-L-CAR-02'], cycles:1}
+];
+
+const COMMITMENTS = [
+  {text:'Draft the property comparison', owner:'o', due:'2026-08-31', status:'rolled', rolls:3},
+  {text:'Test A-O-REL-01 with two people who made the move', owner:'o', due:'2026-09-07', status:'open', rolls:1},
+  {text:'Take a position on M-J-FAM-02', owner:'l', due:'2026-09-07', status:'open', rolls:0},
+  {text:'Book the TCF sitting', owner:'o', due:'2026-08-17', status:'done', rolls:0}
+];
+
+const FINDINGS = [
+  {id:'F-118', rule:'P-1', kind:'pattern', to:['o'], sev:24.6, days:141, state:'surfaced', seen:2,
+   obs:'Over the last two quarters your career milestones moved 7 times across 4 items. Your family milestones moved once across 3 items. Both domains carry similar horizons.',
+   win:'2 quarters, 7 items, first true 2026-04-06',
+   read:'Career dates are being set from ambition and family dates from constraint, so the career ones absorb every bad week. That is not a discipline problem, and treating it as one will not fix it.',
+   dis:'If the career items depend on other people more than the family ones do. Check whether the moves cluster around things outside your control.'},
+
+  {id:'F-124', rule:'C-3', kind:'critique', to:['o','l'], sev:21.0, days:38, state:'queued', seen:0,
+   obs:'M-J-REL-02, filing the application by 2027-09, sits against C-J-02, the joint constraint that you will not be apart more than 4 weeks a year. The filed-then-land sequence you described in SM-2026-07-04-P has one of you in-market for roughly 11 weeks.',
+   win:'Constraint stated 2026-05-02. Milestone authored 2026-07-04. First in conflict 2026-07-18.',
+   read:'The constraint and the plan were written nine weeks apart and have never been read side by side. This is the ordinary way a stated value gets quietly breached: not by choosing against it, but by never putting the two documents on the same page.',
+   dis:'If the 11 week figure is wrong, or if you have already agreed an exception for the landing period and it was not written down.'},
+
+  {id:'F-131', rule:'S-2', kind:'scenario', to:['o','l'], sev:18.4, days:9, state:'queued', seen:0,
+   obs:'A-O-REL-01 is untested and carries M-J-REL-02. If the language result lands one band low and a resit is needed, the earliest resit adds 4 months. Propagated over the two hard dependencies, filing moves from Sep 2027 to Jan 2028, which is 10 months past G-01 and 4 months past the point where M-L-CAR-02 assumes a known market.',
+   win:'Arithmetic over the current dependency graph, run 2026-08-24.',
+   read:'Not a prediction. It is what the graph does if one assumption fails, and it says the whole relocation sequence rests on a single untested language result with no slack behind it.',
+   dis:'If a resit is available sooner than 4 months, or if filing does not actually require the result. Both are checkable in an afternoon.'},
+
+  {id:'F-133', rule:'R-2', kind:'reference', to:['o','l'], sev:19.9, days:3, state:'queued', seen:0,
+   obs:'On relocations where both partners intend to keep working, the partner who searches after landing commonly takes noticeably longer to reach an equivalent level than the one who arrives with a role. The gap tends to be widest in research and advisory work, where local networks and local references matter most.',
+   win:'General knowledge, attached to gate G-01. Not derived from your plan.',
+   read:'It bears on X-01 directly. Your current sequence has Leroo searching after landing, in exactly the kind of work where that ordering costs most.',
+   dis:'',
+   ref:{notIf:'This would not apply to you if Leroo lands a role before the move, if her employer has an in-market entity, or if her work is genuinely remote-first. Any one of the three closes most of the gap.',
+        conf:'medium', stale:'high',
+        note:'Anything touching immigration rules, work authorisation timing or programme criteria changes often. Verify against a current source before it moves a decision.'}},
+
+  {id:'F-109', rule:'P-4', kind:'pattern', to:['o','l'], sev:9.8, days:63, state:'silenced', seen:3,
+   obs:'Leroo\'s weekly reviews ran 4 of the last 9 scheduled. Ona\'s ran 8 of 9.',
+   win:'8 weeks',
+   read:'The cadence is asymmetric enough that the joint review is increasingly working from one person\'s refreshed state and the other\'s recollection.',
+   dis:'If the missed weeks were a known and bounded period rather than a pattern.'}
+];
+
+const REVIEWS = [
+  {id:'RV-2026-08-24-O', mode:'Ona solo', date:'2026-08-24', changed:3, flagged:2,
+   note:'M-J-FIN-01 moved a second time. A-O-REL-01 expired untested for a third cycle.'},
+  {id:'RV-2026-08-19-P', mode:'Partner', date:'2026-08-19', changed:5, flagged:3,
+   note:'X-03 logged. M-J-FAM-02 still unconfirmed after two cycles, forced to next session.'},
+  {id:'RV-2026-08-17-L', mode:'Leroo solo', date:'2026-08-17', changed:2, flagged:1,
+   note:'M-L-CAR-02 marked at risk. Her in-market search cannot start until G-01 closes.'},
+  {id:'SM-2026-07-04-P', mode:'Partner strategy', date:'2026-07-04', changed:9, flagged:2,
+   note:'210 min. Ran 18 over on collisions. D-05 opened and routed to a brief.'}
+];
+</script>
+<script>
+/* ===================== DECISION D-05 ===================== */
+const DEC = {
+  id:'D-05', scope:'joint', title:'Canada route decision', state:'open',
+  question:'Do we commit to the Canada route with the application filed by 2027-03, close it and redirect the money and the study hours, or buy more information and decide by 2027-09?',
+  decideBy:'2027-03', gate:'G-01',
+  stageRule:'Stage is permitted once. It must name what information is being bought, who owns buying it, and the final decision date. Without all three it is postponement with a better name.',
+  options:[
+    {k:'A', label:'Commit now, file by 2027-03', sq:false},
+    {k:'B', label:'Close it and redirect', sq:false},
+    {k:'C', label:'Stage it: buy information, decide 2027-09', sq:false, stage:true},
+    {k:'D', label:'Keep both open indefinitely', sq:true}
+  ],
+  criteria:[
+    {k:'c1', label:'Serves Ona’s career trajectory', from:'M-O-CAR-03'},
+    {k:'c2', label:'Serves Leroo’s career trajectory', from:'M-L-CAR-02'},
+    {k:'c3', label:'Money, against the other 2027 claims', from:'X-02'},
+    {k:'c4', label:'Family timing, first child window', from:'M-J-FAM-02'},
+    {k:'c5', label:'Faith and community continuity', from:'C-J-02'},
+    {k:'c6', label:'Reversibility', from:'principle'}
+  ],
+  weights:{ o:{c1:30,c2:15,c3:20,c4:15,c5:10,c6:10},
+            l:{c1:15,c2:28,c3:17,c4:22,c5:13,c6:5} },
+  scores:{ A:{c1:5,c2:2,c3:2,c4:2,c5:2,c6:1},
+           B:{c1:2,c2:4,c3:5,c4:5,c5:5,c6:4},
+           C:{c1:4,c2:4,c3:3,c4:3,c5:4,c6:5},
+           D:{c1:2,c2:2,c3:2,c4:2,c5:3,c6:5} }
+};
+
+/* a second decision, created from a collision, so Decisions is a list rather than one screen */
+const DEC2 = {
+  id:'D-06', scope:'joint', title:'Who lands first', state:'open', from:null,
+  question:'If only one of us can land well in the first two years after a move, which of us, and what does the other get in exchange?',
+  decideBy:'2027-01', gate:null, fromCollision:'X-01',
+  criteria:[], options:[], weights:{o:{},l:{}}, scores:{}
+};
+const DECISIONS = () => [DEC, DEC2];
+
+/* ===== the method, as data. The six skills seed it; the household owns it. ===== */
+const METHOD = {
+  version: 7, label:'faith first, health last', changedBy:'o', changedAt:'2026-08-19',
+  history:[
+    {v:7, at:'2026-08-19', by:'o', note:'Health moved to last so it audits the whole plan rather than gating learning alone'},
+    {v:6, at:'2026-08-19', by:'o', note:'Faith moved to first: a constraint stated after the goals it should bound arrives too late'},
+    {v:5, at:'2026-08-12', by:'l', note:'Joint review cut 60 to 45. Collisions get the quarterly block instead'},
+    {v:4, at:'2026-08-12', by:'o', note:'Joint session raised 90 to 210, quarterly, with two structural breaks'},
+    {v:3, at:'2026-07-28', by:'o', note:'Individual sessions pinned to monthly rather than "roughly monthly"'},
+    {v:2, at:'2026-07-04', by:'l', note:'Confirmation replaced by proposed / agreed / active'},
+    {v:1, at:'2026-05-02', by:'o', note:'Seeded from the six skills'}
+  ],
+  groups:[
+    {g:'Structure', items:[
+      {k:'structure.domain_order', label:'Domain order', v:'FTH, FAM, FIN, CAR, REL, LRN, HLT',
+       d:'FTH, FAM, FIN, CAR, REL, LRN, HLT', tier:'solo',
+       why:'Faith opens as a filter because it produces constraints, and a constraint stated after the goals it should have bounded arrives too late to do any work. Health closes as an audit: every domain declares an hour demand and health sums them against a ceiling.'}
+    ]},
+    {g:'Cadence and timeboxes', items:[
+      {k:'cadence.individual_days', label:'Individual review', v:'every 7 days', d:'every 7 days', tier:'solo',
+       why:'Weekly is short enough that a slipped week is visible before it becomes a slipped month.'},
+      {k:'cadence.joint_days', label:'Joint review', v:'every 14 days', d:'every 14 days', tier:'solo',
+       why:'The cross-track dependency check is the only thing catching two healthy plans failing to fit, and it needs to run faster than the quarterly session.'},
+      {k:'timebox.review_joint', label:'Joint review length', v:'45 minutes', d:'60 minutes', tier:'solo',
+       why:'Cut from 60. The 15 came out of collisions, which get a 40 minute block in the quarterly session. Everything else in the review has no other venue.'},
+      {k:'timebox.session_joint', label:'Joint session length', v:'210 minutes', d:'90 minutes', tier:'solo',
+       why:'At three and a half hours the session needs structure the shorter one did not: heaviest first, two breaks, and a cutoff after which nothing new opens.'},
+      {k:'session.cutoff_minute', label:'New items close at', v:'minute 150', d:'minute 150', tier:'solo',
+       why:'Decision quality in hour three is not what it is in hour one. The last hour closes items already most of the way there.'}
+    ]},
+    {g:'Rules and thresholds', items:[
+      {k:'rules.slippage_moves', label:'Moves before the goal is questioned', v:'3', d:'3', tier:'solo',
+       why:'A date that has moved three times is telling you about the goal, not the schedule.'},
+      {k:'rules.rollover_limit', label:'Rollovers before park or drop', v:'3', d:'3', tier:'solo',
+       why:'Silent rollover is how a plan becomes decorative. At three it cannot roll again unchanged.'},
+      {k:'rules.proposed_cycles', label:'Cycles before a proposed item is forced', v:'2', d:'2', tier:'solo',
+       why:'A proposed item is not a plan item. Carrying one indefinitely lets the joint plan fill with things only one person wanted.'},
+      {k:'decision.weight_budget', label:'Decision weight budget', v:'100 points', d:'100 points', tier:'solo',
+       why:'A fixed budget makes the trade explicit: raising one criterion means taking those points from another.'},
+      {k:'advisory.per_cycle', label:'Findings surfaced per cycle', v:'3', d:'3', tier:'solo',
+       why:'Advice fatigue kills this layer faster than wrong advice. A bad quarter that generates fourteen findings surfaces three.'}
+    ]},
+    {g:'Protections', two:true, items:[
+      {k:'protection.self_agreement', label:'Cannot agree your own proposal', v:'On', d:'On', tier:'two_key',
+       protects:'the other principal',
+       why:'If one person can agree their own item, the proposed state becomes decorative within a month, and the joint plan quietly becomes one person\'s plan.',
+       without:'A joint item can enter the plan with only your agreement.'},
+      {k:'protection.no_weight_averaging', label:'Weights are never averaged', v:'On', d:'On', tier:'two_key',
+       protects:'the other principal',
+       why:'An averaged weighting produces a preference neither of you holds, and hides the disagreement behind arithmetic.',
+       without:'A single household score can be computed, and the difference between your two rankings stops being visible.'},
+      {k:'protection.private_scope', label:'Private items excluded from every context but conflict checks', v:'On', d:'On', tier:'two_key',
+       protects:'the item\'s owner',
+       why:'One code path may read a private item. Every other flow excludes them by scope rather than by prompt, so the exclusion cannot be forgotten.',
+       without:'Reviews, sessions and reports can load private items.'},
+      {k:'protection.private_routing', label:'Findings from private items go to the owner alone', v:'On', d:'On', tier:'two_key',
+       protects:'the item\'s owner',
+       why:'If a partner ever sees a finding derived from a private item, even as a bare count, private stops meaning anything and people stop marking things private.',
+       without:'A conflict found in your private items can surface to the household.'},
+      {k:'protection.cross_member_findings', label:'No finding about one of you delivered to the other', v:'On', d:'On', tier:'two_key',
+       protects:'the member the finding concerns',
+       why:'A correct observation about one person delivered privately to the other is not analysis, it is ammunition.',
+       without:'A finding about your partner can be shown to you alone.'},
+      {k:'protection.append_only', label:'History is append-only', v:'On', d:'On', tier:'two_key',
+       protects:'both of you, and every future reader',
+       why:'In three years the valuable question is not what the status is, it is what you believed when you chose.',
+       without:'Agreements, closures and decisions can be edited after the fact.'}
+    ]},
+    {g:'Prompts', items:[
+      {k:'prompts.review', label:'Review prompt', v:'from life-review, 6.5k', d:'seeded', tier:'solo',
+       why:'The prompt is a method setting, not a source file. Editing it writes a version like any other change.'},
+      {k:'prompts.session', label:'Session prompt', v:'from strategy-meeting, 11k', d:'seeded', tier:'solo',
+       why:'Behaviour that depends on the method is injected rather than written into the text, so reordering domains does not leave a prompt contradicting itself.'},
+      {k:'prompts.advisor', label:'Advisor prompt', v:'from plan-advisor, 12k', d:'seeded', tier:'solo',
+       why:'Seeded verbatim from the tested skill. Paraphrasing a prompt that has been used is how a method quietly drifts.'}
+    ]}
+  ]
+};
+const methodRequests = [];
+
+const SESSION = {
+  kind:'Partner strategy', total:210, elapsed:79, cutoff:150,
+  /* blocks carry only their planned length. Everything else is derived from elapsed,
+     so the clock and the current block can never disagree. */
+  blocks:[
+    {n:1,  label:'Open, agenda, values grounding', min:15},
+    {n:2,  label:'Check in', min:15},
+    {n:3,  label:'Agree the proposed items', min:25},
+    {n:'', label:'Break', min:10, brk:true},
+    {n:4,  label:'Collisions', min:40},
+    {n:'', label:'Break', min:10, brk:true},
+    {n:5,  label:'Joint items, heaviest first', min:55},
+    {n:6,  label:'Cross-track fit', min:25},
+    {n:7,  label:'Next 90 days and close', min:15}
+  ],
+  transcript:[
+    {who:'Cairn', sys:true, text:'Block 4, collisions. 40 minutes. Three open, oldest first. X-01 has been open 99 days: both careers want the same 2027 to 2029 window. Before positions: this is a weighting gap, not an information gap, so it closes with a trade rather than with a task.'},
+    {who:'Ona', text:'I keep treating it as a sequencing problem. Land, then she searches.'},
+    {who:'Cairn', sys:true, text:'Leroo, state your position before that gets evaluated.'},
+    {who:'Leroo', text:'Sequencing is the problem. In that order my search starts eighteen months behind and it never catches up.'},
+    {who:'Cairn', sys:true, text:'Ona, state her position back until she agrees it is accurate.'},
+    {who:'Ona', text:'That going second is not a delay for her, it is a different and worse ceiling.'},
+    {who:'Cairn', sys:true, text:'Leroo, is that accurate?'},
+    {who:'Leroo', text:'Yes.'},
+    {who:'Cairn', sys:true, text:'Then the trade is explicit: whoever goes second pays a ceiling, not a delay. Name what going second costs the person who wants it less, and X-01 can close as accepted with that cost written down, or as resolved with a decision.'}
+  ]
+};
+
+/* ===================== STATE ===================== */
+let viewer = 'o';
+let route  = 'home';
+let tlFilter = 'all';
+const openDoms = new Set(['FTH','FIN','REL']);
+const liveW = { o:{...DEC.weights.o}, l:{...DEC.weights.l} };
+const dismissed = new Map();          // findingId -> reason
+
+try{
+  const s = localStorage.getItem('cairn.route'); if(s) route = s;
+  const v = localStorage.getItem('cairn.viewer'); if(v) viewer = v;
+  const f = localStorage.getItem('cairn.tl'); if(f) tlFilter = f;
+}catch(e){}
+function save(){ try{
+  localStorage.setItem('cairn.route',route);
+  localStorage.setItem('cairn.viewer',viewer);
+  localStorage.setItem('cairn.tl',tlFilter);
+}catch(e){} }
+
+/* ===================== HELPERS ===================== */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const other = id => id === 'o' ? 'l' : 'o';
+const ym = s => { const [y,m] = s.split('-').map(Number); return y + (m-1)/12; };
+const todayY = TODAY.getFullYear() + TODAY.getMonth()/12;
+const fmtYM = s => { const [y,m] = s.split('-').map(Number);
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1] + ' ' + y; };
+const daysBetween = (a,b) => Math.round((b-a)/86400000);
+const dstr = s => new Date(s+'T00:00:00');
+const trackName = t => t === 'j' ? 'Joint' : MEMBERS[t].name;
+const byId = id => M.find(m => m.id === id);
+
+function pill(s, extra){
+  return `<span class="pill ${extra||''}" data-s="${s}"><span class="sw"></span>${STATUS[s].label}</span>`;
+}
+function agreePill(m){
+  if(m.t !== 'j') return '';
+  const a = m.agree;
+  if(a === 'proposed') return `<span class="pill unconf" title="${AGREE.proposed.hint}"><span class="sw" style="background:transparent;border:2px solid var(--ink-faint)"></span>Proposed</span>`;
+  if(a === 'agreed')   return `<span class="pill conf" title="${AGREE.agreed.hint}"><span class="sw" style="background:var(--st-good);opacity:.55"></span>Agreed</span>`;
+  return `<span class="pill conf" title="${AGREE.active.hint}"><span class="sw" style="background:var(--st-good)"></span>Active</span>`;
+}
+function dueSoon(m){ return ym(m.target) - todayY <= 0.25; }
+
+/* ---- the money audit, computed the way the rules engine computes it ---- */
+const HORIZON = 24;
+function monthKeys(){
+  const out = []; let y = TODAY.getFullYear(), m = TODAY.getMonth();
+  for(let i = 0; i < HORIZON; i++){
+    out.push(`${y}-${String(m+1).padStart(2,'0')}`);
+    if(++m > 11){ m = 0; y++; }
+  }
+  return out;
+}
+const MK = monthKeys();
+const inHousehold = t => true;
+function incomeFor(mk){
+  let total = 0;
+  for(const who of ['o','l'])
+    for(const s of MONEY.income[who])
+      if(!s.from || ym(mk) >= ym(s.from)) total += s.monthly;
+  return total;
+}
+function outflowFor(mk){
+  let rec = 0, one = 0, recCommitted = 0, items = [];
+  for(const o of MONEY.obligations){
+    if(o.kind === 'rec'){
+      if(ym(mk) >= ym(o.from) && (!o.endsOn || ym(mk) <= ym(o.endsOn))){
+        rec += o.amount; if(o.committed) recCommitted += o.amount;
+      }
+    } else if(o.on === mk){
+      one += o.amount; items.push(o);
+    }
+  }
+  return {rec, one, recCommitted, items, total: rec + one};
+}
+function moneyAudit(){
+  const rows = MK.map(mk => {
+    const inc = incomeFor(mk), out = outflowFor(mk);
+    return {mk, inc, ...out, gap: out.total - inc};
+  });
+  const short = rows.filter(r => r.gap > 0).sort((a,b) => b.gap - a.gap);
+  const nowRow = rows[0];
+  const ratioRows = rows.map(r => ({mk:r.mk, v:r.recCommitted / r.inc}));
+  const peakRatio = ratioRows.reduce((a,b) => b.v > a.v ? b : a);
+  const ratio = peakRatio.v;
+  const assumed = [];
+  for(const who of ['o','l'])
+    for(const s of MONEY.income[who])
+      if(s.assumed) assumed.push({...s, who, built: !!s.builtBy});
+  const foreign = MONEY.obligations.filter(o => o.cur && o.cur !== MONEY.reportingCurrency);
+  const foreignShare = foreign.reduce((a,o) => a + o.amount, 0)
+                     / MONEY.obligations.reduce((a,o) => a + o.amount, 0);
+  const quarters = {};
+  MONEY.obligations.filter(o => o.kind === 'one' && o.amount > nowRow.inc).forEach(o => {
+    const [y,m] = o.on.split('-').map(Number);
+    const q = `${y}-Q${Math.ceil(m/3)}`;
+    (quarters[q] = quarters[q] || []).push(o);
+  });
+  const stacked = Object.entries(quarters).filter(([,v]) => v.length >= 2);
+  return {rows, short, ratio, ratioAt: peakRatio.mk, assumed, foreign, foreignShare,
+          stacked, peak: short[0]};
+}
+const fmtM = n => (n >= 1000 ? (n/1000).toFixed(1) + 'm' : Math.round(n) + 'k');
+
+/* the surfacing query, in miniature: visibility, suppression, cap of 3, one reference max */
+const DISMISS = {
+  already_known:{label:'Already know', win:'suppressed 90 days'},
+  not_true     :{label:'Not true',     win:'suppressed permanently, and logged as a threshold bug'},
+  not_now      :{label:'Not now',      win:'suppressed 30 days'},
+  not_relevant :{label:'Not your business', win:'suppressed permanently, no further explanation asked'}
+};
+function queued(){
+  const live = FINDINGS.filter(f =>
+    f.to.includes(viewer) && f.state !== 'silenced' && !dismissed.has(f.id));
+  // keep only the strongest reference finding, then take the top 3 by severity overall
+  const refs = live.filter(f => f.kind === 'reference').sort((a,b) => b.sev - a.sev);
+  const eligible = live.filter(f => f.kind !== 'reference' || f === refs[0]);
+  return eligible.sort((a,b) => b.sev - a.sev).slice(0, 3);
+}
+
+/* things the rules engine computes, here computed the same way */
+function rules(){
+  const movedTwice = M.filter(m => (m.moves||[]).length >= 3);
+  const movedOnce  = M.filter(m => (m.moves||[]).length === 2);
+  const unconf     = M.filter(m => m.t === 'j' && m.agree === 'proposed');
+  const expired    = ASSUMPTIONS.filter(a => a.state === 'expired' || dstr(a.testBy) < TODAY);
+  const rollovers  = COMMITMENTS.filter(c => c.rolls >= 3);
+  const gatesSoon  = GATES.filter(g => (ym(g.by) - todayY) * 12 <= 12);
+  const gatesNoBrief = GATES.filter(g => !g.brief && (ym(g.by)-todayY)*12 <= 6);
+  const atRisk     = M.filter(m => m.agree !== 'proposed'
+                     && (m.s === 'at_risk' || m.s === 'slipped' || m.s === 'blocked'));
+  return {movedTwice, movedOnce, unconf, expired, rollovers, gatesSoon, gatesNoBrief, atRisk};
+}
+function loadTotal(who){
+  const L = LOAD[who]; let s = 0;
+  for(const k in L){ if(k !== 'ceiling' && k !== 'signal') s += L[k]; }
+  return s;
+}
+</script>
+<script>
+/* ===================== NAV + CHROME ===================== */
+const ROUTES = [
+  {g:'Plan'},
+  {k:'home',  label:'Home',        dot:''},
+  {k:'t-o',   label:"Ona's track", dot:'o'},
+  {k:'joint', label:'Joint plan',  dot:'j'},
+  {k:'t-l',   label:"Leroo's track", dot:'l'},
+  {k:'timeline', label:'Timeline', dot:''},
+  {g:'Work'},
+  {k:'money',    label:'Money',    dot:''},
+  {k:'findings', label:'Findings', dot:''},
+  {k:'review',   label:'Review with AI', dot:''},
+  {k:'session',  label:'Session',  dot:''},
+  {k:'decisions', label:'Decisions', dot:''},
+  {k:'logs',     label:'Logs',     dot:''},
+  {g:'Household'},
+  {k:'method',   label:'Method', dot:''},
+  {k:'members',  label:'Members and privacy', dot:''}
+];
+
+function navCount(k){
+  const r = rules();
+  if(k === 'joint')    return {n:r.unconf.length, alert:r.unconf.length > 0};
+  if(k === 'timeline') return {n:COLLISIONS.filter(c=>c.status==='open').length, alert:false};
+  if(k === 'home')     return {n:r.atRisk.length, alert:r.movedTwice.length > 0};
+  if(k === 'findings'){ const q = queued(); return {n:q.length, alert:q.some(f=>f.kind==='reference')}; }
+  if(k === 'money'){ const s = moneyAudit().short.length; return s ? {n:s, alert:true} : null; }
+  if(k === 'decisions') return {n:DECISIONS().filter(d=>d.state==='open').length, alert:false};
+  if(k === 'method'){ const n = methodRequests.filter(r=>r.status==='pending').length;
+    return n ? {n, alert:true} : {n:'v'+METHOD.version, alert:false}; }
+  return null;
+}
+function renderNav(){
+  document.getElementById('nav').innerHTML = ROUTES.map(r => {
+    if(r.g) return `<div class="navgrp">${r.g}</div>`;
+    const c = navCount(r.k);
+    return `<button class="navbtn" data-route="${r.k}" aria-current="${route===r.k}">
+      ${r.dot ? `<span class="dot ${r.dot}"></span>` : `<span class="dot" style="background:transparent"></span>`}
+      <span>${esc(r.label)}</span>
+      ${c ? `<span class="cnt ${c.alert?'alert':''}">${c.n}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+function renderViewerSeg(){
+  document.getElementById('viewerseg').innerHTML = ['o','l'].map(id =>
+    `<button data-viewer="${id}" aria-pressed="${viewer===id}">
+       <span class="dot" style="background:var(--track-${id})"></span>${MEMBERS[id].name}</button>`).join('');
+}
+
+/* ===================== HOME ===================== */
+function vHome(){
+  const r = rules(), me = viewer, you = MEMBERS[me].name;
+  const load = loadTotal(me), ceil = LOAD[me].ceiling, gap = load - ceil;
+  const a = moneyAudit();
+  const oldest = COLLISIONS.filter(c=>c.status==='open')
+    .sort((x,y)=>dstr(x.opened)-dstr(y.opened))[0];
+  const openAge = oldest ? daysBetween(dstr(oldest.opened), TODAY) : 0;
+  const q = queued();
+
+  // what needs this person next, ranked
+  const next = [];
+  M.filter(m => m.t==='j' && m.agree==='proposed' && m.by !== me).forEach(m =>
+    next.push({tag:'Agree or edit', text:`Take a position on ${esc(m.title)}`, ref:m.id, go:'joint'}));
+  COMMITMENTS.filter(c => c.owner === me && c.status !== 'done')
+    .sort((x,y)=>y.rolls-x.rolls).forEach(c =>
+    next.push({tag: c.rolls>=3 ? `Rolled ${c.rolls} times` : 'Committed', text:esc(c.text),
+               ref:`due ${c.due}`, go:'home'}));
+  ASSUMPTIONS.filter(x => x.track === me && dstr(x.testBy) < TODAY).forEach(x =>
+    next.push({tag:'Expired', text:`Test ${x.id}: ${esc(x.text)}`, ref:`carries ${x.carries.length}`, go:'t-'+me}));
+  const top = next.slice(0, 3);
+
+  return `<h1 class="page">Good morning, ${esc(you)}</h1>
+  <p class="lede">Individual review due today, joint review in 3 days. Three things want you
+  first.</p>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="cardhd"><h2>Your next three</h2><span class="sub">ranked, not listed</span></div>
+    ${top.map((n,i)=>`<div class="nextrow">
+      <span class="nrk">${i+1}</span>
+      <span><b>${n.text}</b>
+        <div class="tiny faint" style="margin-top:2px">${n.tag} &middot; ${n.ref}</div></span>
+      <button class="btn sm" data-route="${n.go}" style="margin-left:auto;flex:0 0 auto">Open</button>
+    </div>`).join('')}
+    ${next.length > 3 ? `<div class="tiny faint" style="margin-top:11px">${next.length-3} more
+      behind these. The list is ranked so the top of it is where attention belongs, not so you
+      clear it.</div>` : ''}
+  </div>
+
+  ${q.length ? `<div class="banner">
+    <span class="ref">${q[0].rule}</span>
+    <span><b>${esc(q[0].obs.split('.')[0])}.</b>
+      <div class="tiny faint" style="margin-top:4px">${q.length} finding${q.length===1?'':'s'}
+      queued. They surface at the review, not here, but the top one is worth seeing first.</div></span>
+    <button class="btn sm" style="margin-left:auto;flex:0 0 auto" data-route="findings">Read all</button>
+  </div>` : ''}
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="cardhd"><h2>Signals</h2><span class="sub">computed, not remembered</span></div>
+    ${r.movedTwice.map(m=>sig('Repeated slip', m.id,
+      `<b>${esc(m.title)}</b> has moved ${m.moves.length-1} times.
+       <span class="movehist">${m.moves.map(fmtYM).join(' &rarr; ')}</span>`,
+      'Review the goal, not the date.')).join('')}
+    ${r.expired.map(x=>sig('Stale assumption', x.id,
+      `Untested past ${x.testBy}, ${x.cycles} cycles. Carries ${x.carries.join(', ')}.`,
+      x.cycles>=3 ? 'Survived three cycles without a test. Treat it as unverified until evidence is added.'
+                  : 'Surfaces every review until it resolves.')).join('')}
+    ${r.rollovers.map(c=>sig('Commitment rollover', `×${c.rolls}`,
+      `${esc(c.text)} (${MEMBERS[c.owner].name}).`,
+      'Park, drop or re-scope. It cannot roll again unchanged.')).join('')}
+    ${r.gatesNoBrief.map(g=>sig('Gate without brief', g.id,
+      `${esc(g.title)}, decide by ${fmtYM(g.by)}.`,
+      'Inside six months with nothing worked.')).join('')}
+    ${a.short.length ? sig('Month short', fmtYM(a.peak.mk),
+      `${fmtM(a.peak.total)} lands against ${fmtM(a.peak.inc)} of income.`,
+      `Short by ${fmtM(a.peak.gap)}. ${a.short.length} such months in the next 24.`) : ''}
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="cardhd"><h2>Household</h2><span class="sub">state, not tasks</span></div>
+      <div class="hstat"><b>${r.atRisk.length}</b><span>items need attention</span></div>
+      <div class="hstat"><b>${r.unconf.length}</b><span>joint items proposed, not yet agreed</span></div>
+      <div class="hstat"><b class="${openAge>90?'warn':''}">${openAge}d</b>
+        <span>oldest open collision, ${oldest ? oldest.id : ''}</span></div>
+      <div class="hstat"><b class="${a.short.length?'warn':''}">${a.short.length}</b>
+        <span>months short in the next 24</span></div>
+    </div>
+
+    <div class="card">
+      <div class="cardhd"><h2>Your capacity</h2><span class="sub">hours per normal week</span></div>
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-family:var(--serif);font-size:1.85rem">${load}</span>
+        <span class="muted tiny">against a stated ceiling of ${ceil}</span>
+      </div>
+      ${meter(me)}
+      <p class="tiny ${gap>0?'':'muted'}" style="margin:14px 0 0;${gap>0?'color:var(--st-warn)':''}">
+        ${gap>0 ? `Over by ${gap} hours. Cut a goal, move a date, reduce a scope, or raise the ceiling with a named change.`
+                : `Inside the ceiling by ${-gap} hours.`}</p>
+      <p class="tiny faint" style="margin:8px 0 0">Early signal: ${esc(LOAD[me].signal)}</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="cardhd"><h2>Upcoming decisions</h2><span class="sub">by decide-by date</span></div>
+    <div class="scrollx"><table class="dt">
+      <thead><tr><th>Ref</th><th>Decision</th><th>Decide by</th><th>Brief</th></tr></thead>
+      <tbody>${GATES.slice().sort((x,y)=>ym(x.by)-ym(y.by)).map(g=>{
+        const mo = Math.round((ym(g.by)-todayY)*12);
+        return `<tr><td class="ref">${g.id}</td>
+          <td class="nm">${esc(g.title)}
+            <div class="tiny faint" style="margin-top:2px">${g.outcomes.join(' &middot; ')}</div></td>
+          <td>${fmtYM(g.by)} <span class="tiny faint">${mo}mo</span></td>
+          <td>${g.brief ? `<span class="ref">${g.brief}</span>`
+            : `<span style="color:var(--st-warn)">none written</span>`}</td></tr>`;
+      }).join('')}</tbody></table></div>
+  </div>`;
+}
+
+function sig(kind, ref, body, rule){
+  return `<div class="sigrow">
+    <span class="sigk">${kind}</span>
+    <span><span class="ref">${ref}</span> ${body}
+      <div class="tiny faint" style="margin-top:3px">${rule}</div></span>
+  </div>`;
+}
+
+function meter(who){
+  const L = LOAD[who], total = loadTotal(who), ceil = L.ceiling;
+  const scale = Math.max(total, ceil) * 1.12;
+  const segs = DOMAINS.filter(d => L[d.code]).map((d,i) =>
+    `<span title="${d.code} ${L[d.code]}h" style="width:${L[d.code]/scale*100}%;background:var(--track-${who});opacity:${1 - i*0.12}"></span>`).join('');
+  return `<div class="meter">${segs}</div>
+  <div class="ceilmark"><i style="left:${ceil/scale*100}%"></i>
+    <em style="left:${ceil/scale*100}%">ceiling ${ceil}h</em></div>
+  <div class="tiny faint" style="margin-top:22px">${DOMAINS.filter(d=>L[d.code])
+    .map(d=>`${d.code} ${L[d.code]}h`).join(' &middot; ')}</div>`;
+}
+</script>
+<script>
+/* ===================== TRACK / JOINT VIEWS ===================== */
+function vTrack(t){
+  const isMine = t === viewer;
+  const isJoint = t === 'j';
+  const owner = isJoint ? null : MEMBERS[t];
+  const title = isJoint ? 'Joint plan' : `${owner.name}'s track`;
+  const claimed = true;
+
+  let lede;
+  if(isJoint){
+    const mine = M.filter(m=>m.t==='j' && m.agree==='proposed' && m.by===viewer).length;
+    const theirs = M.filter(m=>m.t==='j' && m.agree==='proposed' && m.by!==viewer).length;
+    lede = `What commits both of you. An item is <b>Proposed</b> until you both agree it belongs,
+      then <b>Agreed</b>, then <b>Active</b> once it is being worked. Execution status only starts
+      once you agree it exists.<br>
+      ${theirs} proposed by ${MEMBERS[other(viewer)].name}, waiting on you.
+      ${mine} you proposed and ${MEMBERS[other(viewer)].name} has not agreed.`;
+  } else if(isMine){
+    lede = `Yours to author. ${MEMBERS[other(t)].name} can read it, apart from what you mark private.`;
+  } else {
+    lede = `${owner.name}'s to author. You can read it. You cannot change anything in it, and private items show only as a count.`;
+  }
+
+  const doms = DOMAINS.map(d => domBlock(t, d)).filter(Boolean).join('');
+  return `<h1 class="page">${esc(title)}</h1><p class="lede">${lede}</p>
+    ${!isJoint && !isMine ? `<div class="card" style="margin-bottom:16px;border-color:var(--rule-strong)">
+      <div class="tiny muted">You are viewing as <b>${MEMBERS[viewer].name}</b>.
+      Every edit control below is absent rather than disabled, because a locked button still
+      tells you something exists.</div></div>` : ''}
+    ${doms}`;
+}
+
+function domBlock(t, d){
+  const ms = M.filter(m => m.t === t && m.d === d.code);
+  const goals = (GOALS[t]||{})[d.code];
+  const privCount = t !== 'j' ? (PRIVATE[t]||{})[d.code] : 0;
+  const asms = ASSUMPTIONS.filter(a => a.track === t && a.d === d.code);
+  if(!ms.length && !goals && !privCount) return '';
+  const open = openDoms.has(d.code);
+  const needs = ms.filter(m => m.agree !== 'proposed' && ['at_risk','slipped','blocked'].includes(m.s)).length;
+  const unconf = ms.filter(m => m.agree === 'proposed').length;
+  const isMine = t === viewer;
+
+  return `<div class="dom" data-open="${open}" data-dom="${d.code}-${t}">
+    <button class="domhd" data-toggle="${d.code}">
+      <span class="domcode">${d.code}</span>
+      <span class="domname">${esc(d.name)}</span>
+      <span class="dommeta">
+        ${needs ? `<span class="pill" data-s="at_risk"><span class="sw"></span>${needs} need attention</span>` : ''}
+        ${unconf ? `<span class="pill unconf"><span class="sw" style="background:transparent;border:2px solid var(--ink-faint)"></span>${unconf} proposed</span>` : ''}
+        ${privCount && isMine ? `<span class="pill priv"><span class="sw" style="background:transparent;border:2px solid var(--ink-faint)"></span>${privCount} private</span>` : ''}
+        <span class="ref">${ms.length}</span>
+        <span class="chev">&#9656;</span>
+      </span>
+    </button>
+    <div class="dombody">
+      ${goals ? `<div class="sect"><div class="secth">Goals</div>
+        ${goals.map((g,i)=>`<div class="goalrow"><b>${['Now','Next','Later'][i]||''}</b><span>${esc(g)}</span></div>`).join('')}
+      </div>` : ''}
+      ${ms.length ? `<div class="sect"><div class="secth">Milestones</div>
+        <div class="scrollx"><table class="dt">
+        <thead><tr><th>Ref</th><th>Milestone</th><th>Target</th><th>Execution</th>
+          ${t==='j'?'<th>Agreement</th>':''}<th></th></tr></thead>
+        <tbody>${ms.map(m => msRow(m, t)).join('')}</tbody></table></div>
+      </div>` : ''}
+      ${privCount ? privBlock(t, privCount) : ''}
+      ${asms.length ? `<div class="sect"><div class="secth">Assumptions</div>
+        ${asms.map(a=>`<div class="itemline"><span class="ref">${a.id}</span><span>
+          ${esc(a.text)}<br><span class="tiny faint">confidence ${a.conf} &middot; test by ${a.testBy}
+          &middot; carries ${a.carries.join(', ')}
+          ${dstr(a.testBy) < TODAY ? ` &middot; <span style="color:var(--st-crit)">expired, ${a.cycles} cycles untested</span>` : ''}</span>
+        </span></div>`).join('')}
+      </div>` : ''}
+      ${LOAD[t] && LOAD[t][d.code] ? `<div class="sect"><div class="secth">Hour demand</div>
+        <div class="tiny muted">${LOAD[t][d.code]} hours in a normal week. Counted in the health audit.</div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function msRow(m, t){
+  const isJoint = t === 'j';
+  const proposed = isJoint && m.agree === 'proposed';
+  const canAct = proposed && m.by !== viewer;
+  const isMine = proposed && m.by === viewer;
+  const moved = (m.moves||[]).length >= 2;
+  return `<tr>
+    <td class="ref">${m.id}</td>
+    <td class="nm">${esc(m.title)}
+      ${m.note ? `<div class="tiny faint" style="margin-top:3px">${esc(m.note)}</div>` : ''}
+      ${moved ? `<div class="movehist" style="margin-top:3px">moved ${m.moves.length-1}&times;: ${m.moves.map(fmtYM).join(' &rarr; ')}</div>` : ''}
+      ${m.hist ? `<div class="tiny faint" style="margin-top:4px;font-family:var(--mono);font-size:.66rem">${
+        m.hist.map(h=>`${h.e} by ${MEMBERS[h.who].name} ${h.at}`).join(' &middot; ')}</div>` : ''}</td>
+    <td>${fmtYM(m.target)}</td>
+    <td>${proposed
+      ? `<span class="tiny faint">not yet</span>`
+      : pill(m.s)}</td>
+    ${isJoint ? `<td>${agreePill(m)}</td>` : ''}
+    <td style="text-align:right">
+      ${canAct ? `<div class="actbtns" style="justify-content:flex-end;margin-top:0">
+          <button class="btn sm pri" data-agree="${m.id}" data-v="agreed">Agree</button>
+          <button class="btn sm" data-agree="${m.id}" data-v="edit">Propose edit</button>
+          <button class="btn sm" data-agree="${m.id}" data-v="discuss">Discuss</button>
+        </div>` : ''}
+      ${isMine ? `<div class="tiny faint" style="text-align:right">Waiting on ${MEMBERS[other(viewer)].name}</div>
+        <div class="why" style="text-align:right;margin-left:auto">You proposed it, so you cannot agree it.</div>` : ''}
+    </td>
+  </tr>`;
+}
+
+function privBlock(t, n){
+  const mine = t === viewer;
+  if(mine) return `<div class="privrow">
+    <span class="ref">PRIVATE</span>
+    <span>${n} item${n===1?'':'s'} only you can see. ${MEMBERS[other(t)].name} sees the count and nothing else.
+    Conflict checking compares them against the plan; anything it finds comes to you first.</span>
+    <button class="btn sm" style="margin-left:auto" data-privlog="1">Access log</button></div>`;
+  return `<div class="privrow">
+    <span class="ref">PRIVATE</span>
+    <span>${n} private item${n===1?'':'s'}. No titles, no dates, no placeholder rows.
+    The count is all that crosses.</span></div>`;
+}
+
+/* ===================== MEMBERS ===================== */
+function vMembers(){
+  return `<h1 class="page">Members and privacy</h1>
+  <p class="lede">Two principals today. A household holds up to 6 members, being at most
+  2 principals and up to 4 dependants. Advisors sit outside that count, up to 4 of them, because
+  an advisor is someone you grant a view rather than someone in the household.
+  Adding anyone beyond the second member needs both principals to act.</p>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="cardhd"><h2>Household members</h2><span class="sub">2 of 6</span></div>
+    <div class="scrollx"><table class="dt">
+      <thead><tr><th>Member</th><th>Role</th><th>Track</th><th>Joint plan</th><th>Private-item conflict checks</th></tr></thead>
+      <tbody>
+      ${['o','l'].map(id=>`<tr>
+        <td class="nm"><span class="pill" style="border-color:var(--track-${id})"><span class="sw" style="background:var(--track-${id})"></span>${MEMBERS[id].name}</span></td>
+        <td>Principal</td><td>Owns</td><td>Co-owns, confirms</td>
+        <td>Allowed, since 2026-05-02</td></tr>`).join('')}
+      </tbody></table></div>
+    <div class="tiny muted" style="margin-top:12px">
+      <b>Allow private-item conflict checks.</b> Cairn may privately compare your private items
+      against the household plan to spot conflicts. Your partner never sees the private item, and
+      anything found comes to you first.</div>
+    <div class="tiny faint" style="margin-top:8px">
+      Each principal answered separately, in their own session. If either had declined, private
+      items would be excluded from automated comparison for the whole household.</div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="cardhd"><h2>Roles available</h2></div>
+      <div class="scrollx"><table class="dt">
+        <thead><tr><th>Role</th><th>Max</th><th>Own track</th><th>Joint plan</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Principal</td><td>2</td><td>Yes</td><td>Co-owns, confirms</td></tr>
+          <tr><td class="nm">Dependent</td><td>4</td><td>Yes</td><td>Reads, proposes, cannot confirm</td></tr>
+          <tr><td class="nm">Advisor</td><td>4, outside the 6</td><td>No</td><td>Reads only what is granted</td></tr>
+        </tbody></table></div>
+      <p class="tiny faint" style="margin:12px 0 0">
+        Advisor grants are scoped per track per domain, revocable, and expire after 90 days
+        so a stale grant does not quietly persist for years.</p>
+      <div class="hstat" style="margin-top:14px;border-top:1px solid var(--rule);padding-top:12px">
+        <b>0</b><span>advisors, of 4. Separate from the 6 member slots.</span></div>
+      <button class="btn" style="margin-top:14px" data-addmember="1">Add a member</button>
+    </div>
+
+    <div class="card">
+      <div class="cardhd"><h2>Access log</h2><span class="sub">yours only</span></div>
+      <p class="tiny muted" style="margin-top:0">Every automated access to your own private items.
+      No content, since the content is already yours. Just the fact that it was read.</p>
+      <div class="scrollx"><table class="dt">
+        <thead><tr><th>When</th><th>Purpose</th><th>Run</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">2026-08-24 03:12</td><td>Collision detection</td><td class="ref">run_8f21</td></tr>
+          <tr><td class="nm">2026-08-17 03:11</td><td>Collision detection</td><td class="ref">run_7c04</td></tr>
+          <tr><td class="nm">2026-08-10 03:12</td><td>Collision detection</td><td class="ref">run_6b93</td></tr>
+        </tbody></table></div>
+      <p class="tiny faint" style="margin:12px 0 0">Reviews, sessions, briefs and prep never load
+      private items. Only conflict checking does, and anything it finds comes to you alone.</p>
+    </div>
+  </div>`;
+}
+
+/* ===================== LOGS ===================== */
+function vLogs(){
+  return `<h1 class="page">Logs</h1>
+  <p class="lede">Review and session records, newest first. Entries are never edited.</p>
+  <div class="card">
+    ${REVIEWS.map(r=>`<div class="logrow">
+      <div><div class="ref">${r.id}</div><div class="tiny faint">${r.date}</div></div>
+      <div><div class="nm" style="font-weight:500">${esc(r.mode)}</div>
+        <div class="tiny muted" style="margin-top:2px">${esc(r.note)}</div>
+        <div class="tiny faint" style="margin-top:4px">${r.changed} status changes &middot; ${r.flagged} flagged</div>
+      </div></div>`).join('')}
+  </div>`;
+}
+</script>
+<script>
+/* ===================== TIMELINE ===================== */
+const TL = {
+  start: 2026 + 7/12,        // Aug 2026
+  months: 62,
+  pxM: 17,
+  padL: 14,
+  headH: 64,
+  laneH: 25,
+  gGap: 12,
+  labelW: 176
+};
+TL.width = TL.padL*2 + TL.months*TL.pxM;
+TL.groupH = TL.laneH*3;
+TL.height = TL.headH + DOMAINS.length*(TL.groupH + TL.gGap);
+
+const LANES = ['o','j','l'];
+const x = s => TL.padL + (ym(s) - TL.start) * 12 * TL.pxM;
+const xNow = TL.padL + (todayY - TL.start) * 12 * TL.pxM;
+function groupTop(i){ return TL.headH + i*(TL.groupH + TL.gGap); }
+function laneY(di, t){ return groupTop(di) + LANES.indexOf(t)*TL.laneH; }
+function markY(di, t){ return laneY(di, t) + TL.laneH/2; }
+function markPos(id){
+  const m = byId(id); if(!m) return null;
+  const di = DOMAINS.findIndex(d => d.code === m.d);
+  return {cx:x(m.target), cy:markY(di, m.t), m};
+}
+const laneShown = t => tlFilter === 'all' || tlFilter === t || (tlFilter !== 'all' && t === 'j' && tlFilter !== 'j') ? (tlFilter === 'all' || t === 'j' || t === tlFilter) : false;
+
+function vTimeline(){
+  return `<h1 class="page">Timeline</h1>
+  <p class="lede">Seven domains, three lanes each, joint in the middle so dependency lines cross it.
+  Colour carries state, lane position carries whose it is, and no status depends on colour alone.
+  Tap or focus any mark for its detail; the plan views are the table version of this chart.</p>
+
+  <div class="tlbar">
+    <div class="seg" role="group" aria-label="Lane filter">
+      ${[['all','All'],['o','Ona'],['j','Joint'],['l','Leroo']].map(([k,l])=>
+        `<button data-tl="${k}" aria-pressed="${tlFilter===k}">${l}</button>`).join('')}
+    </div>
+    <div class="legend">
+      ${['on_track','at_risk','slipped','blocked','done','parked'].map(s=>{
+        const st = STATUS[s];
+        return `<span><i class="lgsw" style="${st.fill?`background:${st.c}`:`background:transparent;border:2px solid ${st.c}`}"></i>${st.label}</span>`;
+      }).join('')}
+      <span><i class="lgsw" style="background:transparent;border:2px dashed var(--ink-faint)"></i>Proposed, not yet agreed</span>
+    </div>
+  </div>
+
+  <div class="tlhost"><div style="display:flex;min-width:min-content">
+    <div style="position:sticky;left:0;z-index:3;background:var(--surface);border-right:1px solid var(--rule-strong);flex:0 0 ${TL.labelW}px">
+      ${tlLabels()}
+    </div>
+    ${tlSvg()}
+  </div></div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <div class="cardhd"><h2>Open collisions</h2><span class="sub">oldest first</span></div>
+      ${COLLISIONS.filter(c=>c.status==='open')
+        .sort((a,b)=>dstr(a.opened)-dstr(b.opened)).map(c=>{
+        const age = daysBetween(dstr(c.opened), TODAY);
+        return `<div class="itemline"><span class="ref">${c.id}</span><span>
+          <b>${esc(c.tension)}</b><br>
+          <span class="tiny faint">${c.kind} gap &middot; ${c.tracks.map(trackName).join(' and ')}
+          &middot; ${fmtYM(c.from)} to ${fmtYM(c.to)} &middot;
+          <span style="${age>90?'color:var(--st-warn);font-weight:600':''}">open ${age} days</span></span><br>
+          <span class="tiny muted">${c.kind==='information'?'Closes with a task. Assign it, do not debate it.'
+            :c.kind==='weighting'?'Closes with a trade. Name what it costs the person who wants it less.'
+            :'Does not close. File it as a standing constraint instead of relitigating it every quarter.'}</span>
+        </span></div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="cardhd"><h2>Gates</h2><span class="sub">by decide-by date</span></div>
+      ${GATES.map(g=>{
+        const mo = Math.round((ym(g.by)-todayY)*12);
+        return `<div class="itemline"><span class="ref">${g.id}</span><span>
+          <b>${esc(g.title)}</b><br>
+          <span class="tiny ${mo<=6&&!g.brief?'':'faint'}" style="${mo<=6&&!g.brief?'color:var(--st-crit)':''}">
+          Decide by ${fmtYM(g.by)}, ${mo} months out &middot;
+          ${g.brief?`brief ${g.brief} exists`:'no brief written'}</span><br>
+          <span class="tiny faint">${g.tracks.map(trackName).join(', ')} &middot; ${g.domains.join(', ')}</span>
+        </span></div>`;
+      }).join('')}
+      <div class="cardhd" style="margin-top:20px"><h2>Assumptions needing attention</h2></div>
+      ${ASSUMPTIONS.filter(a=>a.conf==='low'||dstr(a.testBy)<TODAY)
+        .sort((a,b)=>b.carries.length-a.carries.length).map(a=>
+        `<div class="itemline"><span class="ref">${a.id}</span><span>
+          ${esc(a.text)}<br><span class="tiny faint">carries ${a.carries.length} milestone${a.carries.length===1?'':'s'}
+          &middot; confidence ${a.conf}
+          ${dstr(a.testBy)<TODAY?` &middot; <span style="color:var(--st-crit)">expired ${a.testBy}</span>`:` &middot; test by ${a.testBy}`}</span>
+        </span></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function tlLabels(){
+  let h = `<div style="height:${TL.headH}px;border-bottom:1px solid var(--rule);display:flex;align-items:flex-end;padding:0 12px 7px">
+    <span class="ref" style="font-size:.64rem;letter-spacing:.12em;text-transform:uppercase">Domain / lane</span></div>`;
+  DOMAINS.forEach((d,i)=>{
+    h += `<div style="height:${TL.groupH}px;padding:0 12px;position:relative">
+      <div style="position:absolute;top:3px;left:12px;font-family:var(--mono);font-size:.66rem;
+        font-weight:600;letter-spacing:.09em;color:var(--brand)">${d.code}</div>
+      <div style="position:absolute;top:${TL.laneH-3}px;left:12px;right:12px;font-size:.72rem;
+        color:var(--ink-muted);line-height:1.25">${esc(d.short)}</div>
+      ${LANES.map(t=>{
+        const vis = tlFilter==='all' || tlFilter===t;
+        return `<div style="position:absolute;right:10px;top:${LANES.indexOf(t)*TL.laneH + 5}px;
+          font-family:var(--mono);font-size:.63rem;letter-spacing:.08em;
+          color:${t==='j'?'var(--ink-faint)':`var(--track-${t})`};opacity:${vis?1:.28}">
+          ${t==='j'?'JOINT':MEMBERS[t].name.toUpperCase()}</div>`;
+      }).join('')}
+    </div><div style="height:${TL.gGap}px"></div>`;
+  });
+  return h;
+}
+
+function tlSvg(){
+  const W = TL.width, H = TL.height;
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="Plan timeline by domain and track" style="display:block;flex:0 0 auto">
+    <defs>
+      <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <line x1="0" y="0" x2="0" y2="7" stroke="var(--st-warn)" stroke-width="2.4" opacity=".28"/>
+      </pattern>
+    </defs>`;
+
+  // horizon bands
+  const bands = [['Now',0,6],['Next',6,24],['Later',24,62]];
+  bands.forEach(([lab,a,b],i)=>{
+    const x0 = TL.padL + (todayY - TL.start)*12*TL.pxM + a*TL.pxM;
+    const x1 = Math.min(TL.padL + (todayY - TL.start)*12*TL.pxM + b*TL.pxM, W-TL.padL);
+    s += `<rect x="${x0}" y="${TL.headH}" width="${Math.max(0,x1-x0)}" height="${H-TL.headH}"
+      fill="var(--ink)" opacity="${0.028 - i*0.009}"/>
+      <text x="${x0+6}" y="13" font-family="var(--mono)" font-size="8.5"
+      letter-spacing="1.3" fill="var(--ink-faint)">${lab.toUpperCase()}</text>`;
+  });
+
+  // year gridlines + labels
+  for(let yr=2027; yr<=2031; yr++){
+    const gx = x(`${yr}-01`);
+    s += `<line x1="${gx}" y1="${TL.headH-16}" x2="${gx}" y2="${H}" stroke="var(--rule-strong)" stroke-width="1"/>
+      <text x="${gx+5}" y="${TL.headH-5}" font-family="var(--mono)" font-size="10"
+      fill="var(--ink-muted)" font-variant-numeric="tabular-nums">${yr}</text>`;
+    for(let q=4; q<12; q+=4){
+      const qx = x(`${yr}-${String(q+1).padStart(2,'0')}`);
+      if(qx < W) s += `<line x1="${qx}" y1="${TL.headH}" x2="${qx}" y2="${H}" stroke="var(--rule)" stroke-width="1"/>`;
+    }
+  }
+
+  // lane backgrounds
+  DOMAINS.forEach((d,di)=>{
+    LANES.forEach(t=>{
+      const vis = tlFilter==='all' || tlFilter===t;
+      s += `<rect x="0" y="${laneY(di,t)}" width="${W}" height="${TL.laneH}"
+        fill="${t==='j'?'var(--ink)':'var(--ink)'}" opacity="${t==='j'?0.022:0.008}"
+        ${vis?'':'style="opacity:.004"'}/>`;
+    });
+    s += `<line x1="0" y1="${groupTop(di)+TL.groupH}" x2="${W}" y2="${groupTop(di)+TL.groupH}"
+      stroke="var(--rule)" stroke-width="1"/>`;
+  });
+
+  // collision regions
+  COLLISIONS.filter(c=>c.status==='open').forEach(c=>{
+    c.domains.forEach(dc=>{
+      const di = DOMAINS.findIndex(d=>d.code===dc); if(di<0) return;
+      const lanes = c.tracks.length ? c.tracks : ['j'];
+      const ys = lanes.map(t=>laneY(di,t));
+      const y0 = Math.min(...ys), y1 = Math.max(...ys)+TL.laneH;
+      s += `<rect x="${x(c.from)}" y="${y0}" width="${x(c.to)-x(c.from)}" height="${y1-y0}"
+        fill="url(#hatch)" stroke="var(--st-warn)" stroke-width="1" stroke-dasharray="3 3" opacity=".85"
+        class="hit" data-tip="collision:${c.id}" tabindex="0" role="button"
+        aria-label="Collision ${c.id}"/>`;
+    });
+    const di0 = DOMAINS.findIndex(d=>d.code===c.domains[0]);
+    s += `<text x="${x(c.from)+5}" y="${groupTop(di0)-3}" font-family="var(--mono)" font-size="8.5"
+      fill="var(--st-crit)" font-weight="600" pointer-events="none">${c.id}</text>`;
+  });
+
+  // dependency lines
+  DEPS.forEach(dep=>{
+    const a = markPos(dep.from), b = markPos(dep.to);
+    if(!a||!b) return;
+    const vis = (tlFilter==='all') || [a.m.t,b.m.t].includes(tlFilter) || [a.m.t,b.m.t].includes('j');
+    const up = a.m.s;
+    const alert = up==='slipped'||up==='blocked';
+    const cross = a.m.t !== b.m.t;
+    const mx = (a.cx+b.cx)/2;
+    s += `<path d="M ${a.cx} ${a.cy} C ${mx} ${a.cy}, ${mx} ${b.cy}, ${b.cx} ${b.cy}"
+      fill="none" stroke="${alert?'var(--st-crit)':'var(--ink-faint)'}"
+      stroke-width="${(dep.nature==='hard'?1.5:1) + (alert?.5:0) + (cross?.4:0)}"
+      stroke-dasharray="${dep.nature==='hard'?'':'4 3'}"
+      opacity="${vis?(alert?.9:.55):.12}"/>`;
+  });
+
+  // gates
+  GATES.slice().sort((a,b)=>ym(a.by)-ym(b.by)).forEach((g,gi)=>{
+    const gx = x(g.by);
+    const mo = Math.round((ym(g.by)-todayY)*12);
+    const urgent = mo<=6 && !g.brief;
+    const ry = 20 + (gi % 2) * 19;                 // stagger so adjacent gate labels never collide
+    const col = urgent ? 'var(--st-crit)' : 'var(--brand)';
+    s += `<line x1="${gx}" y1="${ry}" x2="${gx}" y2="${H}" stroke="${col}"
+      stroke-width="1.5" stroke-dasharray="5 4" opacity=".75"/>
+      <rect x="${gx-2}" y="${ry}" width="${g.id.length*6.4+50}" height="15" rx="3"
+        fill="var(--surface)" stroke="${col}" stroke-width="1"
+        class="hit" data-tip="gate:${g.id}" tabindex="0" role="button"
+        aria-label="Gate ${g.id}, decide by ${g.by}"/>
+      <text x="${gx+4}" y="${ry+11}" font-family="var(--mono)" font-size="8.5"
+        fill="${col}" font-weight="600" pointer-events="none">${g.id} ${g.by}</text>`;
+  });
+
+  // today
+  s += `<line x1="${xNow}" y1="${TL.headH-16}" x2="${xNow}" y2="${H}" stroke="var(--ink)" stroke-width="2"/>
+    <text x="${xNow+5}" y="${TL.headH-5}" font-family="var(--mono)" font-size="9"
+      fill="var(--ink)" font-weight="600">TODAY</text>`;
+
+  // milestones
+  DOMAINS.forEach((d,di)=>{
+    LANES.forEach(t=>{
+      const vis = tlFilter==='all' || tlFilter===t;
+      M.filter(m=>m.d===d.code && m.t===t).forEach((m, idx, arr)=>{
+        const cx = x(m.target);
+        let cy = markY(di,t);
+        if(arr.length>1){
+          const clash = arr.filter((o,j)=>j<idx && Math.abs(x(o.target)-cx) < 16).length;
+          cy += clash * 8 - (clash?4:0);
+        }
+        const st = STATUS[execOf(m)];
+        const op = vis ? 1 : .14;
+        // slippage ghosts
+        (m.moves||[]).slice(0,-1).forEach(mv=>{
+          s += `<circle cx="${x(mv)}" cy="${cy}" r="4" fill="none" stroke="var(--st-crit)"
+            stroke-width="1" opacity="${op*.45}"/>
+            <line x1="${x(mv)}" y1="${cy}" x2="${cx}" y2="${cy}" stroke="var(--st-crit)"
+            stroke-width="1" stroke-dasharray="2 2" opacity="${op*.4}"/>`;
+        });
+        const unconf = m.t==='j' && m.agree==='proposed';
+        const label = m.id.slice(2);
+        const room = !arr.some((o,j)=>{
+          if(j===idx) return false;
+          const dx = x(o.target) - cx;
+          return dx > 0 && dx < label.length*5.4 + 20;
+        });
+        s += `<circle cx="${cx}" cy="${cy}" r="6.5"
+          fill="${st.fill?st.c:'var(--surface)'}"
+          stroke="${unconf?'var(--ink-faint)':st.c}"
+          stroke-width="${unconf?2:(st.fill?1.5:2)}"
+          stroke-dasharray="${unconf?'3 2':''}"
+          opacity="${op}" class="hit" data-tip="ms:${m.id}" tabindex="0" role="button"
+          aria-label="${esc(m.title)}, ${trackName(m.t)}, ${fmtYM(m.target)}"/>
+          ${room ? `<text x="${cx+11}" y="${cy+3.5}" font-family="var(--mono)" font-size="8.5"
+            fill="var(--ink-faint)" opacity="${op}" pointer-events="none"
+            ${m.s==='dropped'?'text-decoration="line-through"':''}>${label}</text>` : ''}`;
+      });
+    });
+  });
+  return s + `</svg>`;
+}
+</script>
+<script>
+/* ===================== DECISION ===================== */
+function totals(who){
+  const w = liveW[who], sum = Object.values(w).reduce((a,b)=>a+b,0);
+  return DEC.options.map(o=>{
+    const raw = DEC.criteria.reduce((a,c)=> a + DEC.scores[o.k][c.k]*w[c.k], 0);
+    return {k:o.k, label:o.label, raw, pct: sum ? raw/(5*sum)*100 : 0};
+  }).sort((a,b)=>b.pct-a.pct);
+}
+function sensitivity(who){
+  const base = totals(who), win = base[0].k, out = [];
+  DEC.criteria.forEach(c=>{
+    const keep = liveW[who][c.k];
+    liveW[who][c.k] = Math.min(60, keep+10);
+    if(totals(who)[0].k !== win) out.push({c:c.label, dir:'up'});
+    liveW[who][c.k] = Math.max(0, keep-10);
+    if(totals(who)[0].k !== win && !out.find(x=>x.c===c.label)) out.push({c:c.label, dir:'down'});
+    liveW[who][c.k] = keep;
+  });
+  return out;
+}
+function scoreFlip(who){
+  const base = totals(who), win = base[0].k;
+  for(const o of DEC.options) for(const c of DEC.criteria){
+    const keep = DEC.scores[o.k][c.k];
+    for(const d of [1,-1]){
+      const v = keep + d; if(v<1||v>5) continue;
+      DEC.scores[o.k][c.k] = v;
+      const flip = totals(who)[0].k !== win;
+      DEC.scores[o.k][c.k] = keep;
+      if(flip) return {opt:o.k, crit:c.label, dir:d>0?'up':'down'};
+    }
+  }
+  return null;
+}
+
+function vDecision(){
+  const me = viewer, them = other(viewer);
+  const tMe = totals(me), tThem = totals(them);
+  const margin = tMe[0].pct - tMe[1].pct;
+  const tie = margin < 8;
+  const sameWinner = tMe[0].k === tThem[0].k;
+  const sens = sensitivity(me);
+  const sflip = scoreFlip(me);
+  const budget = Object.values(liveW[me]).reduce((a,b)=>a+b,0);
+  const left = 100 - budget;
+  const balanced = budget === 100;
+
+  return `<h1 class="page">${DEC.id}: ${esc(DEC.title)}</h1>
+  <p class="lede">${esc(DEC.question)}</p>
+
+  <button class="btn sm" data-route="decisions" style="margin-bottom:16px">&larr; All decisions</button>
+
+  <div class="grid g3" style="margin-bottom:16px">
+    <div class="tile"><div class="k">Scope</div><div class="v" style="font-size:1.2rem;padding-top:9px">Joint</div>
+      <div class="n">Neither of you decides it alone</div></div>
+    <div class="tile"><div class="k">Decide by</div><div class="v" style="font-size:1.2rem;padding-top:9px">${fmtYM(DEC.decideBy)}</div>
+      <div class="n">Gate ${DEC.gate}, ${Math.round((ym(DEC.decideBy)-todayY)*12)} months out</div></div>
+    <div class="tile"><div class="k">Weights set</div><div class="v" style="font-size:1.2rem;padding-top:9px">Separately</div>
+      <div class="n">Before any option was scored</div></div>
+  </div>
+
+  <div class="quiet" style="margin-bottom:16px">
+    <b>Staging is a real option, not a delay.</b> ${esc(DEC.stageRule)}
+    Gate ${DEC.gate} accordingly resolves to one of: ${GATES.find(g=>g.id===DEC.gate).outcomes.join(', ')}.
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="cardhd"><h2>Your weights</h2>
+      <span class="sub"><span class="budget ${balanced?'':'over'}">${budget} of 100 allocated${
+        balanced ? '' : `, ${left > 0 ? left + ' left to place' : Math.abs(left) + ' over'}`}</span></span></div>
+    <p class="tiny muted" style="margin-top:0">You have 100 points. Where you put them is what
+    reveals what matters. Raising one criterion means taking those points from another, which is
+    the trade the method exists to make explicit. ${MEMBERS[them].name}'s 100 are hers and do not
+    move when yours do.</p>
+    <div class="scrollx"><table class="wgrid">
+      <thead><tr><th>Criterion</th><th>Derived from</th><th style="width:210px">${MEMBERS[me].name} (you)</th>
+        <th style="width:90px">${MEMBERS[them].name}</th></tr></thead>
+      <tbody>${DEC.criteria.map(c=>`<tr>
+        <td>${esc(c.label)}</td>
+        <td class="ref">${c.from}</td>
+        <td><div class="wcell">
+          <input type="range" min="0" max="45" step="1" value="${liveW[me][c.k]}" data-w="${c.k}"
+            aria-label="Weight for ${esc(c.label)}">
+          <output>${liveW[me][c.k]}</output></div></td>
+        <td class="num faint">${liveW[them][c.k]}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <button class="btn sm" style="margin-top:12px" data-wreset="1">Reset to the weights we set</button>
+  </div>
+
+  ${!balanced ? `<div class="card" style="margin-bottom:16px;border-color:var(--st-warn)">
+    <div class="cardhd"><h2>Matrix held</h2><span class="sub">${Math.abs(left)} points ${left>0?'unplaced':'over'}</span></div>
+    <p class="tiny muted" style="margin:0">The matrix runs on exactly 100 points. Scoring against
+    a different total quietly turns "allocate 100" into "assign whatever importance you like",
+    and those are two different methods with two different meanings.
+    ${left > 0 ? `Place the remaining ${left}` : `Take ${Math.abs(left)} back off something`}
+    and it will run.</p>
+  </div>` : ''}
+
+  <div class="card" style="margin-bottom:16px;${balanced?'':'opacity:.4;pointer-events:none'}">
+    <div class="cardhd"><h2>Matrix</h2><span class="sub">scores 1 to 5, weighted, as percent of maximum</span></div>
+    <div class="scrollx"><table class="wgrid">
+      <thead><tr><th>Option</th>
+        ${DEC.criteria.map(c=>`<th class="num" style="text-align:right">${c.k.toUpperCase()}</th>`).join('')}
+        <th class="num" style="text-align:right">${MEMBERS[me].name}</th>
+        <th class="num" style="text-align:right">${MEMBERS[them].name}</th></tr></thead>
+      <tbody>${DEC.options.map(o=>{
+        const rMe = tMe.find(r=>r.k===o.k), rThem = tThem.find(r=>r.k===o.k);
+        const winMe = tMe[0].k===o.k, winThem = tThem[0].k===o.k;
+        return `<tr>
+          <td class="nm" style="color:var(--ink)">${esc(o.label)}${o.sq?' <span class="ref">status quo</span>':''}</td>
+          ${DEC.criteria.map(c=>`<td class="num">${DEC.scores[o.k][c.k]}</td>`).join('')}
+          <td class="num" style="${winMe?'font-weight:600;color:var(--ink)':''}">${rMe.pct.toFixed(1)}${winMe?' &#9664;':''}</td>
+          <td class="num" style="${winThem?'font-weight:600;color:var(--ink)':''}">${rThem.pct.toFixed(1)}${winThem?' &#9664;':''}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+    <div class="nocombine">
+      There is no combined column, and there is no place in the schema to store one.
+      Averaging two people's weights produces a preference neither of you holds.
+    </div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="cardhd"><h2>What the current model suggests</h2>
+        <span class="sub">evidence, not the decision</span></div>
+      <div class="winner">
+        <div style="font-weight:600">${sameWinner
+          ? `Under your current weights and scores, both of you rank ${esc(tMe[0].label)} first.`
+          : `Under your current weights and scores you rank ${esc(tMe[0].label)} first and ${MEMBERS[them].name} ranks ${esc(tThem[0].label)} first.`}</div>
+        <div class="tiny muted" style="margin-top:5px">${sameWinner
+          ? 'Agreement here follows from the inputs, so it is worth checking the inputs before treating it as settled.'
+          : 'A difference in ranking is itself information. It goes to the partner session as a weighting gap, and weighting gaps close with a trade rather than with arithmetic.'}
+          <br>This is evidence for the conversation, not the decision itself.</div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="secth">Margin, your weights</div>
+        <div class="tiny ${tie?'':'muted'}" style="${tie?'color:var(--st-crit)':''}">
+          ${tMe[0].pct.toFixed(1)} against ${tMe[1].pct.toFixed(1)}, ${margin.toFixed(1)} apart.
+          ${tie ? 'Inside the 8 point band, which is inside the noise of a 1 to 5 scale. Treat it as a tie and decide on reversibility instead: take the option that is cheaper to undo and set the date you review it.'
+                : 'Outside the tie band, so the ranking is not an artefact of small differences in scoring.'}</div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="secth">Largest weighting gap</div>
+        <div class="tiny muted">${(()=>{
+          let big = DEC.criteria[0], d = 0;
+          DEC.criteria.forEach(c=>{const g=Math.abs(liveW[me][c.k]-liveW[them][c.k]); if(g>d){d=g;big=c;}});
+          return `${esc(big.label)}, ${d} points apart. Worth naming out loud before anything closes.`;
+        })()}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhd"><h2>Sensitivity</h2><span class="sub">mandatory, not optional</span></div>
+      <div class="secth">Weight flip</div>
+      <div class="tiny muted">${sens.length
+        ? sens.slice(0,3).map(s=>`If you moved <b>${esc(s.c)}</b> 10 points ${s.dir}, the winner changes.`).join('<br>')
+        : 'No single weight moved 10 points changes the winner. The result is stable against your weighting.'}</div>
+      <div class="secth" style="margin-top:16px">Score flip</div>
+      <div class="tiny ${sflip?'':'muted'}" style="${sflip?'color:var(--st-crit)':''}">${sflip
+        ? `One cell moved one point changes the winner: option ${sflip.opt}, ${esc(sflip.crit)}, ${sflip.dir}. The ranking rests on a single judgement call, so treat it as provisional.`
+        : 'No single cell moved one point changes the winner.'}</div>
+      <div class="secth" style="margin-top:16px">Reversibility</div>
+      <div class="tiny muted">Staging is the cheapest to undo and the status quo is free to undo but expensive to hold. Committing is the only one that is hard to reverse, and it is the one with the earliest deadline.</div>
+    </div>
+  </div>`;
+}
+
+/* ===================== SESSION ===================== */
+/* single source of truth: elapsed minutes. Block state is computed, never stored. */
+function sessionState(){
+  const s = SESSION, cutoff = s.cutoff;
+  let start = 0;
+  const rows = s.blocks.map(b => {
+    const row = {b, start, end: start + b.min};
+    start += b.min;
+    return row;
+  });
+  const cur = rows.find(r => s.elapsed >= r.start && s.elapsed < r.end) || rows[rows.length-1];
+  rows.forEach(r => {
+    r.k = r === cur ? 'cur' : (r.b.brk ? 'break' : (r.end <= s.elapsed ? 'done' : ''));
+  });
+  return {
+    rows, cur, cutoff,
+    elapsed: s.elapsed, total: s.total,
+    remainingInBlock: cur.end - s.elapsed,
+    toCutoff: cutoff - s.elapsed,
+    cutoffRow: rows.find(r => cutoff >= r.start && cutoff < r.end)
+  };
+}
+
+function vSession(){
+  const s = SESSION;
+  const S = sessionState();
+  const rows = S.rows, cutoff = S.cutoff;
+  return `<h1 class="page">Partner strategy session</h1>
+  <p class="lede">210 minutes, quarterly. The app runs the clock, calls the breaks, and closes
+  the door on new heavy items at minute 150.</p>
+
+  <div class="grid g3" style="margin-bottom:16px">
+    <div class="tile"><div class="k">Elapsed</div><div class="v">${S.elapsed}<span style="font-size:.9rem;color:var(--ink-muted)"> min</span></div>
+      <div class="n">of ${S.total}</div></div>
+    <div class="tile"><div class="k">Current block</div>
+      <div class="v" style="font-size:1.2rem;padding-top:9px">${esc(S.cur.b.label.split(',')[0])}</div>
+      <div class="n">${S.remainingInBlock} minutes remaining of ${S.cur.b.min}</div></div>
+    <div class="tile"><div class="k">New items close at</div><div class="v" style="font-size:1.2rem;padding-top:9px">Minute ${cutoff}</div>
+      <div class="n">${S.toCutoff} minutes from now</div></div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="cardhd"><h2>Blocks</h2><span class="sub">heaviest first</span></div>
+      <div class="blocks">${rows.map(r=>`
+        <div class="blk" data-k="${r.k}">
+          <span class="bn">${r.b.n||'&middot;'}</span>
+          <span>${esc(r.b.label)}${r.k==='cur'
+            ? ` <span class="ref">${S.remainingInBlock}m left</span>` : ''}</span>
+          <span class="bm">${r.b.min}m &middot; ends ${r.end}</span>
+        </div>
+        ${r === S.cutoffRow ? `<div class="gateline"><span class="ref">MIN ${cutoff}</span>
+            <span>Minute ${cutoff} falls ${cutoff - r.start} minutes into <b>${esc(r.b.label)}</b>.
+            Nothing new opens after it. What is left closes items already most of the way there.</span>
+          </div>` : ''}
+      `).join('')}</div>
+    </div>
+
+    <div class="card">
+      <div class="cardhd"><h2>Live</h2>
+        <span class="sub">block ${S.cur.b.n || '&middot;'} of ${SESSION.blocks.filter(b=>b.n).length}</span></div>
+      <div class="transcript">
+        ${s.transcript.map(t=>`<div class="turn ${t.sys?'sys':''}">
+          <span class="who">${t.sys?'Cairn':esc(t.who)}</span><p>${esc(t.text)}</p></div>`).join('')}
+      </div>
+      <div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn pri" data-resolve="X-01" data-kind="accept">Close X-01 as accepted</button>
+        <button class="btn" data-resolve="X-01" data-kind="decide">Resolve with a decision</button>
+        <button class="btn" data-resolve="X-01" data-kind="open">Leave open, next step</button>
+      </div>
+      <p class="why">Closing requires a kind, a cost, and an owner. An open collision with no
+      next step is not being managed.</p>
+      ${resolvePanel()}
+      ${resolutionLog.filter(r=>r.id==='X-01').map(r=>`<div class="quiet" style="margin-top:12px">
+        <b>${r.id} ${r.verb}</b>, ${r.at}, by ${MEMBERS[r.by].name}.<br>${esc(r.detail)}
+        <div class="tiny faint" style="margin-top:5px">Recorded, append only. This entry is never
+        edited.</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+</script>
+<script>
+/* ===================== FINDINGS ===================== */
+const KIND = {
+  pattern  :{label:'Pattern',  src:'your logs, over time'},
+  critique :{label:'Critique', src:'your plan, right now'},
+  scenario :{label:'Scenario', src:'your dependency graph'},
+  reference:{label:'Reference',src:'knowledge from outside your plan'}
+};
+
+function findCard(f){
+  const d = dismissed.get(f.id);
+  return `<div class="find" data-k="${f.kind}">
+    <div class="findhd">
+      <span class="kindtag">${KIND[f.kind].label}</span>
+      <span class="ref">${f.id} &middot; ${f.rule}</span>
+      ${f.seen ? `<span class="pill"><span class="sw"></span>surfaced ${f.seen}&times;</span>` : ''}
+      ${f.state==='silenced' ? `<span class="pill"><span class="sw" style="background:transparent;border:2px solid var(--ink-faint)"></span>silenced</span>` : ''}
+      <span class="sev">severity ${f.sev.toFixed(1)} &middot; true ${f.days}d</span>
+    </div>
+    <dl style="margin:0">
+      <div class="fline obs"><dt>What is true</dt><dd>${esc(f.obs)}</dd></div>
+      <div class="fline"><dt>Window</dt><dd>${esc(f.win)}</dd></div>
+      <div class="fline read"><dt>My reading</dt><dd>${esc(f.read)}</dd></div>
+      ${f.dis ? `<div class="fline dis"><dt>Wrong if</dt><dd>${esc(f.dis)}</dd></div>` : ''}
+    </dl>
+    ${f.ref ? `<div class="refbox">
+      <div><b>General knowledge, not from your plan</b></div>
+      <div>${esc(f.ref.notIf)}</div>
+      <div class="tiny faint">Confidence ${f.ref.conf} &middot; staleness ${f.ref.stale}.
+        ${esc(f.ref.note)}</div>
+    </div>` : ''}
+    ${d ? `<div class="dismiss"><span class="tiny faint">Dismissed as
+      <b>${DISMISS[d].label}</b>: ${DISMISS[d].win}. It will not be rephrased or raised
+      obliquely.</span></div>`
+      : f.state === 'silenced'
+      ? `<div class="dismiss"><span class="tiny faint">Surfaced twice, escalated once to the joint
+         agenda, now permanently quiet. It speaks again only if the underlying numbers change.</span></div>`
+      : `<div class="dismiss">
+          <span class="tiny faint" style="width:100%">Dismissing asks which reason, because
+          the reason sets the window and "not true" is how a threshold bug gets found.</span>
+          ${Object.entries(DISMISS).map(([k,v])=>
+            `<button class="btn sm" data-dismiss="${f.id}" data-reason="${k}">${v.label}</button>`).join('')}
+        </div>`}
+  </div>`;
+}
+
+function vFindings(){
+  const q = queued();
+  const held = FINDINGS.filter(f => f.to.includes(viewer) && !q.includes(f) && !dismissed.has(f.id)
+    && f.state !== 'silenced');
+  const silent = FINDINGS.filter(f => f.to.includes(viewer) && f.state === 'silenced');
+  const gone = FINDINGS.filter(f => dismissed.has(f.id));
+
+  return `<h1 class="page">Findings</h1>
+  <p class="lede">What the plan says about itself. Every one fired because a stated threshold
+  tripped, not because something seemed worth mentioning. Three a cycle at most, one of them at
+  most from outside your own data.</p>
+
+  <div class="banner">
+    <span class="ref">CAP</span>
+    <span class="tiny">Showing ${q.length} of ${q.length + held.length} live, ranked by severity.
+    ${held.length ? `${held.length} held for the next cycle.` : ''}
+    ${q.some(f=>f.kind==='reference') ? 'One reference finding, which is the limit per batch.' : ''}
+    Nothing surfaces during a session.</span>
+  </div>
+
+  ${q.map(findCard).join('')}
+
+  ${gone.length ? `<div class="cardhd" style="margin-top:28px"><h2>Dismissed</h2></div>
+    ${gone.map(findCard).join('')}` : ''}
+
+  ${silent.length ? `<div class="cardhd" style="margin-top:28px"><h2>Gone quiet</h2>
+      <span class="sub">three attempts, then silence</span></div>
+    ${silent.map(findCard).join('')}` : ''}
+
+  <div class="quiet" style="margin-top:20px">
+    <b>What never fires.</b> Anything derived from a private item, to anyone but its owner.
+    Any reference finding on faith, family or health: if you ask directly it answers, unprompted
+    it never does. Any finding about one of you, delivered to the other. Anything at all during
+    a session. Any pattern finding in the first eight weeks, because there is not enough history
+    to be saying anything.
+  </div>`;
+}
+
+/* ===================== METHOD ===================== */
+let methodEdit = null;      // {k, tier}
+
+function vMethod(){
+  const them = other(viewer);
+  const pending = methodRequests.filter(r => r.status === 'pending');
+  return `<h1 class="page">Method</h1>
+  <p class="lede">How Cairn runs, as data rather than as code. Seeded from the six skills and
+  yours to change. Every setting shows the argument it encodes, because the moment to read why
+  Faith opens the order is the moment you are about to reorder it.</p>
+
+  <div class="grid g3" style="margin-bottom:16px">
+    <div class="tile"><div class="k">Active version</div>
+      <div class="v">v${METHOD.version}</div>
+      <div class="n">${esc(METHOD.label)}</div></div>
+    <div class="tile"><div class="k">Changes</div>
+      <div class="v">${METHOD.history.length}</div>
+      <div class="n">since seeding, each with a reason</div></div>
+    <div class="tile"><div class="k">Awaiting ${esc(MEMBERS[them].name)}</div>
+      <div class="v ${pending.length?'warn':''}">${pending.length}</div>
+      <div class="n">protection changes you requested</div></div>
+  </div>
+
+  ${pending.map(r=>`<div class="banner" style="border-left-color:var(--st-warn)">
+    <span class="ref">2-KEY</span>
+    <span><b>${esc(r.label)}</b> requested ${r.at}.
+      <div class="tiny faint" style="margin-top:4px">Reason given: ${esc(r.reason)}.
+      ${esc(MEMBERS[them].name)} approves or declines. You cannot approve your own request.</div></span>
+    <button class="btn sm" data-mwithdraw="${r.k}" style="margin-left:auto;flex:0 0 auto">Withdraw</button>
+  </div>`).join('')}
+
+  ${METHOD.groups.map(g=>`
+    <div class="card" style="margin-bottom:16px">
+      <div class="cardhd"><h2>${esc(g.g)}</h2>
+        <span class="sub">${g.two ? 'two keys: changing these needs both of you' : 'yours to change'}</span></div>
+      ${g.two ? `<p class="tiny muted" style="margin-top:0">Nothing here is locked. Each of these
+        is something the other person relies on, so changing one is a request rather than an edit,
+        in the same way adding a member is. A setting you can switch off alone, that weakens what
+        your partner depends on, is not a preference.</p>` : ''}
+      ${g.items.map(it => methodRow(it, g.two)).join('')}
+    </div>`).join('')}
+
+  <div class="card">
+    <div class="cardhd"><h2>Version history</h2><span class="sub">reverting is a forward step</span></div>
+    ${METHOD.history.map(h=>`<div class="logrow">
+      <div><div class="ref">v${h.v}</div><div class="tiny faint">${h.at}</div></div>
+      <div><div class="tiny muted">${esc(h.note)}</div>
+        <div class="tiny faint" style="margin-top:3px">${MEMBERS[h.by].name}</div></div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function methodRow(it, two){
+  const editing = methodEdit && methodEdit.k === it.k;
+  const req = methodRequests.find(r => r.k === it.k && r.status === 'pending');
+  return `<div class="mrow">
+    <div class="mhead">
+      <span class="mlabel">${esc(it.label)}</span>
+      <span class="mval">${esc(it.v)}</span>
+      ${it.v !== it.d ? `<span class="ref" title="canonical default">was ${esc(it.d)}</span>` : ''}
+      ${two ? `<span class="pill unconf"><span class="sw" style="background:transparent;border:2px solid var(--st-warn)"></span>2 keys</span>` : ''}
+      ${req ? `<span class="pill"><span class="sw" style="background:var(--st-warn)"></span>requested</span>` : ''}
+      ${!req ? `<button class="btn sm" data-medit="${it.k}" style="margin-left:auto">
+        ${two ? 'Request change' : 'Change'}</button>` : ''}
+    </div>
+    <div class="mwhy">${esc(it.why)}</div>
+    ${two ? `<div class="mprotect"><b>Protects</b> ${esc(it.protects)}.
+      <b>Without it</b> ${esc(it.without)}</div>` : ''}
+    ${editing ? methodForm(it, two) : ''}
+  </div>`;
+}
+
+function methodForm(it, two){
+  const them = other(viewer);
+  if(two) return `<div class="mform">
+    <div class="warnbox">
+      <b>${esc(MEMBERS[them].name)} currently relies on this.</b>
+      ${esc(it.without)} This is not blocked, but it is not yours to change alone: it goes to
+      ${esc(MEMBERS[them].name)} as a request, and she approves or declines with a reason.
+    </div>
+    <label class="fld"><span>Why do you want this changed?</span>
+      <input id="mf1" placeholder="Required. She will read this before deciding."></label>
+    <div class="actbtns">
+      <button class="btn pri" data-msave="${it.k}" data-two="1">Send request to ${esc(MEMBERS[them].name)}</button>
+      <button class="btn" data-mcancel="1">Cancel</button>
+    </div>
+  </div>`;
+  return `<div class="mform">
+    <label class="fld"><span>New value</span><input id="mf0" value="${esc(it.v)}"></label>
+    <label class="fld"><span>Why? Required, and it goes in the version history</span>
+      <input id="mf1" placeholder="The argument for the change, not just what changed"></label>
+    <div class="actbtns">
+      <button class="btn pri" data-msave="${it.k}">Save as v${METHOD.version + 1}</button>
+      <button class="btn" data-mcancel="1">Cancel</button>
+    </div>
+  </div>`;
+}
+
+/* ===================== DECISIONS ===================== */
+function vDecisions(){
+  const list = DECISIONS();
+  return `<h1 class="page">Decisions</h1>
+  <p class="lede">Every consequential call, with what was believed at the time. The log is what
+  makes a decision revisitable in three years instead of merely remembered.</p>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="cardhd"><h2>Open</h2><span class="sub">${list.filter(d=>d.state==='open').length}</span></div>
+    <div class="scrollx"><table class="dt">
+      <thead><tr><th>Ref</th><th>Question</th><th>Scope</th><th>Decide by</th><th>Source</th><th></th></tr></thead>
+      <tbody>${list.map(d=>`<tr>
+        <td class="ref">${d.id}</td>
+        <td class="nm">${esc(d.title)}
+          <div class="tiny faint" style="margin-top:3px">${esc(d.question)}</div></td>
+        <td>Joint</td>
+        <td>${fmtYM(d.decideBy)}</td>
+        <td class="ref">${d.gate || d.fromCollision || ''}</td>
+        <td style="text-align:right">${d.criteria.length
+          ? `<button class="btn sm" data-route="decision">Open</button>`
+          : `<span class="tiny faint">Not yet worked</span>`}</td>
+      </tr>`).join('')}</tbody></table></div>
+    ${DEC2.from ? `<div class="quiet" style="margin-top:14px">
+      <b>D-06 created from ${DEC2.from}</b>, 2026-08-25. Question prefilled from the collision.
+      Criteria, options and weights are empty until someone works it, which is the honest state
+      rather than a half-populated matrix.</div>` : ''}
+  </div>
+
+  <div class="card">
+    <div class="cardhd"><h2>Decision log</h2><span class="sub">immutable, and the point of the exercise</span></div>
+    <div class="quiet" style="margin-bottom:12px">
+      <b>Nothing closed yet.</b> When one closes, the entry records what you believed at the time,
+      not just what you chose. A worked example of the shape:
+    </div>
+    <div class="logrow">
+      <div><div class="ref">D-04</div><div class="tiny faint">2026-05-19</div></div>
+      <div>
+        <div class="nm" style="font-weight:500">Wedding date and scale</div>
+        <div class="tiny muted" style="margin-top:4px">
+          <b>Chose:</b> September 2026, smaller than originally discussed.<br>
+          <b>Because:</b> the reserve was thin, and a larger event would have pushed the property
+          decision past G-02.<br>
+          <b>Still uncertain at the time:</b> whether family contributions would land.<br>
+          <b>Would reconsider if:</b> contributions arrived before June.<br>
+          <b>Review date:</b> none, executed.
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ===================== COLLISION RESOLUTION ===================== */
+let resolveMode = null;     // {id, kind}
+const resolutionLog = [];
+
+function resolvePanel(){
+  if(!resolveMode) return '';
+  const c = COLLISIONS.find(x => x.id === resolveMode.id);
+  const k = resolveMode.kind;
+  if(k === 'accept') return `<div class="card" style="margin-top:14px;border-color:var(--brand)">
+    <div class="cardhd"><h2>Close ${c.id} as accepted</h2>
+      <span class="sub">an accepted collision is a live cost, not a closed item</span></div>
+    <label class="fld"><span>What is the accepted cost?</span>
+      <input id="rf1" value="Leroo's search starts after landing, which costs her a ceiling rather than a delay"></label>
+    <label class="fld"><span>Who carries that cost?</span>
+      <select id="rf2"><option value="l">Leroo</option><option value="o">Ona</option>
+        <option value="j">Both, split</option></select></label>
+    <div class="actbtns"><button class="btn pri" data-rsave="accept">Record and close</button>
+      <button class="btn" data-rcancel="1">Cancel</button></div>
+    <p class="why">Accepting without naming the cost and its carrier is closing it by forgetting
+    about it. Both fields are required.</p></div>`;
+  if(k === 'open') return `<div class="card" style="margin-top:14px;border-color:var(--brand)">
+    <div class="cardhd"><h2>Leave ${c.id} open</h2><span class="sub">with a next step</span></div>
+    <label class="fld"><span>Next step</span>
+      <input id="rf1" value="Ask two people who made the move whether the trailing partner recovered"></label>
+    <label class="fld"><span>Owner</span>
+      <select id="rf2"><option value="o">Ona</option><option value="l">Leroo</option></select></label>
+    <label class="fld"><span>Due</span><input id="rf3" value="2026-09-14"></label>
+    <div class="actbtns"><button class="btn pri" data-rsave="open">Record</button>
+      <button class="btn" data-rcancel="1">Cancel</button></div>
+    <p class="why">An open collision with no next step is not being managed. All three are required.</p></div>`;
+  return '';
+}
+
+/* ===================== ADVISORY REVIEW ===================== */
+let reviewRun = false;
+const actionState = new Map();
+
+const REVIEW_SECTIONS = [
+  {k:'verdict', n:'1', h:'Verdict'},
+  {k:'capacity', n:'2', h:'Capacity: can you carry it'},
+  {k:'timing', n:'3', h:'Timing'},
+  {k:'costing', n:'4', h:'Costing'},
+  {k:'coverage', n:'5', h:'Coverage'},
+  {k:'behaviour', n:'6', h:'Behaviour'},
+  {k:'outside', n:'7', h:'Outside view'},
+  {k:'actions', n:'8', h:'What I would do'},
+  {k:'change', n:'9', h:'What would change my mind'}
+];
+
+const ACTIONS = [
+  {rank:1, title:'Decide the property question before January, not in it',
+   cost:'Closes an option you have kept open for 11 months, and one of you will mind.',
+   forecloses:'If you buy, the education fund starts a year late. If you do not, you are renting through the move.',
+   why:'It is the only item that unlocks the two worst months in the schedule. Everything else in this list is downstream of it.',
+   when:'Before 2026-12, which is G-02.'},
+  {rank:2, title:'Test A-O-REL-01 this month',
+   cost:'Two conversations and an afternoon.',
+   forecloses:'Nothing.',
+   why:'The cheapest item on the list by a wide margin, and it carries three milestones across both tracks. It has been untested for three cycles while decisions were made on top of it.',
+   when:'By 2026-09-14.'},
+  {rank:3, title:'Move the reserve top-up ahead of the education fund start',
+   cost:'The fund starts roughly four months later than planned.',
+   forecloses:'Very little. The fund target is annual, not monthly.',
+   why:'The reserve is below target in the same quarter the largest one-off lands. Funding a long-horizon goal while the short-horizon buffer is thin is the wrong order.',
+   when:'Next joint review.'},
+  {rank:4, title:'Give Leroo the first landing, or write down that you are not',
+   cost:'If she goes first, your PM trajectory takes the delay instead of hers.',
+   forecloses:'A sequence where both of you land well is not available. One of you pays.',
+   why:'X-01 has been open 99 days as a weighting gap. It does not close by waiting, and the person it costs more is currently the one who has not been asked.',
+   when:'The quarterly session, as the first item.'}
+];
+
+function vReview(){
+  const a = moneyAudit(), r = rules();
+  if(!reviewRun){
+    return `<h1 class="page">Review with AI</h1>
+    <p class="lede">A full advisory pass over the whole plan. Different from the findings queue,
+    which interrupts you when a threshold trips. This one is you asking, so it says what it
+    thinks.</p>
+
+    <div class="runbar">
+      <div style="flex:1;min-width:260px">
+        <div style="font-weight:600;margin-bottom:5px">It will read</div>
+        <div class="tiny muted">Both tracks and the joint plan in full, the whole review log,
+        the whole decision log, and the findings log including what you dismissed. Not your
+        private items, and not Leroo's.</div>
+      </div>
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:600;margin-bottom:5px">It will produce</div>
+        <div class="tiny muted">Nine sections and a ranked list of actions. An opinion, not a
+        summary. Roughly two minutes to run, fifteen to read.</div>
+      </div>
+      <button class="btn pri" data-runreview="1" style="flex:0 0 auto">Run the review</button>
+    </div>
+
+    <div class="quiet">
+      <b>Last run:</b> 2026-05-30, twelve weeks ago. A report read as current when it is twelve
+      weeks old is worse than no report, which is why the date is here rather than buried.
+    </div>`;
+  }
+
+  return `<h1 class="page">Advisory review</h1>
+  <p class="lede">Run 2026-08-25, requested by Ona. Covers all three tracks.
+  Every figure below comes from the rules engine, not from prose.</p>
+
+  <div class="card">
+    ${sec(1, `<div class="verdict">This plan is coherent everywhere except 2027, where it needs
+      money it does not have. Three commitments land in the first quarter against an income that
+      does not cover them, and the largest is a property deposit nobody has decided on. Fix the
+      order of the money and the rest of the plan holds. Leave it and the relocation, the
+      education fund and the reserve all degrade together.</div>`)}
+
+    ${sec(2, `<p><b>Hours.</b> Ona is at ${loadTotal('o')} against a stated ceiling of
+      ${LOAD.o.ceiling}, over by ${loadTotal('o')-LOAD.o.ceiling}. Leroo is at
+      ${loadTotal('l')} against ${LOAD.l.ceiling}, under by ${LOAD.l.ceiling-loadTotal('l')}.
+      His overage is not spread: it sits almost entirely in career, at ${LOAD.o.CAR} hours.</p>
+      <p><b>Money.</b> Committed recurring outflow is ${Math.round(a.ratio*100)} percent of
+      income before any one-off lands. ${a.short.length} of the next 24 months are short.
+      Combined reserve is ${(MONEY.reserve.o.months+MONEY.reserve.l.months).toFixed(1)} months
+      against a target of six each, and the thinner of the two is Ona's at
+      ${MONEY.reserve.o.months}.</p>
+      <p>The hours gap is the one you will feel first and the money gap is the one that will
+      cost more. They are not independent: the career hours are what the income assumption rests
+      on.</p>`)}
+
+    ${sec(3, `<p>Everything in relocation hangs off one untested assumption. A-O-REL-01 has been
+      expired for ${daysBetween(dstr('2026-08-31'), TODAY) < 0 ? 'nearly a month' : daysBetween(dstr('2026-08-31'), TODAY) + ' days'}
+      and carries M-J-REL-02 and M-J-REL-03. If the language result lands one band low, filing
+      moves roughly four months, which is past G-01 and past the point M-L-CAR-02 assumes a known
+      market.</p>
+      <p>Two milestones have moved twice or more: ${r.movedTwice.map(m=>m.id).join(' and ')}.
+      Neither has had its goal re-examined, only its date. A third move on either is a signal
+      about the goal, not the schedule.</p>
+      <p>G-02 is inside four months with no brief written. G-01 has a brief and eighteen months.
+      The one with less time has less work behind it.</p>`)}
+
+    ${sec(4, `<p>The schedule breaks in ${a.short.map(x=>fmtYM(x.mk)).join(' and ')}.
+      ${a.peak ? `The worst is ${fmtYM(a.peak.mk)}: ${fmtM(a.peak.total)} lands against
+      ${fmtM(a.peak.inc)} of income, short by ${fmtM(a.peak.gap)}.` : ''}</p>
+      <p>${a.stacked.map(([q,items])=>`${q} carries two one-offs each above a month of income,
+      ${items.map(i=>esc(i.label)).join(' and ')}.`).join(' ')}
+      That pairing is the single largest cause of the shortfall, and it is a sequencing choice
+      rather than an affordability fact. Separated by two quarters, both are affordable.</p>
+      <p>${Math.round(a.foreignShare*100)} percent of committed outflow is in CAD against NGN
+      income, governed by A-J-FIN-02 at confidence low. A 20 percent adverse move adds roughly
+      ${fmtM(a.foreign.reduce((x,o)=>x+o.amount,0)*0.2)}. You are carrying an FX position, and it
+      is not written down as one anywhere in the plan.</p>
+      <p>The senior CX uplift is assumed income and M-L-CAR-01 is building it, which is the right
+      shape. Note the coupling: if that milestone slips, the income slips with it, and it is
+      already load-bearing in 2027.</p>`)}
+
+    ${sec(5, `<p>Three things the plan does not cover.</p>
+      <p><b>No income protection anywhere.</b> Two salaries, one of them carrying a plan with
+      no slack, and nothing in either track addresses what happens if one stops for six months.
+      The reserve covers four.</p>
+      <p><b>The wedding is a milestone but the year after it is not.</b> M-J-FAM-01 lands in
+      September and nothing between then and the first child window in 2028 describes what that
+      first year is meant to be. The plan skips from event to event.</p>
+      <p><b>FTH has constraints and no milestones, which is correct, but one constraint has never
+      been tested against a live decision.</b> C-J-02, the four weeks apart limit, is breached by
+      the current relocation sequence. That is finding F-124 and it is the thing you would be
+      most annoyed about in three years if nobody had raised it.</p>`)}
+
+    ${sec(6, `<p>Career milestones have moved seven times in two quarters. Family milestones have
+      moved once. Both carry similar item counts and similar horizons, so this is not about
+      difficulty. Career dates are being set from ambition and family dates from constraint, and
+      the career ones absorb every bad week.</p>
+      <p>Review cadence is asymmetric: Ona ran eight of nine, Leroo four of nine. The joint review
+      is increasingly working from one refreshed state and one recollection, which is a slow way
+      for a joint plan to become one person's plan.</p>
+      <p>Both readings are about the system and the plan, not about either of you. Say them that
+      way in the room.</p>`)}
+
+    ${sec(7, `<p><b>General knowledge, not from your plan.</b> On relocations where both partners
+      keep working, the partner who searches after landing commonly takes noticeably longer to
+      reach an equivalent level, and the gap is widest in research and advisory work where local
+      networks matter most.</p>
+      <p><b>This would not apply to you if</b> Leroo lands a role before the move, if her employer
+      has an in-market entity, or if her work is genuinely remote-first. Any one of the three
+      closes most of the gap.</p>
+      <p class="tiny faint">Confidence medium, staleness high. Anything touching work
+      authorisation timing or programme criteria changes often, and should be verified against a
+      current source before it moves a decision. Nothing here is offered on faith, family or
+      health, which is where outside knowledge is least reliable and most intrusive.</p>`)}
+
+    ${sec(8, `<div>${ACTIONS.map(actCard).join('')}</div>
+      <p class="tiny faint" style="margin-top:14px">Ranked by leverage, not by ease. The top item
+      is the least comfortable one, which is usually how the ranking should come out. These are
+      recommendations. You decide.</p>`)}
+
+    ${sec(9, `<ul>
+      <li>If A-O-REL-01 tests clean, the timing section is materially less worrying and action 2
+        drops off the list.</li>
+      <li>If the property deposit is not actually due in Q1 2027, most of section 4 dissolves and
+        action 1 becomes routine rather than urgent.</li>
+      <li>If Leroo already has an in-market route, the outside view in section 7 does not apply
+        and action 4 changes shape.</li>
+      <li>If the missed reviews were a bounded period rather than a pattern, ignore the second
+        paragraph of section 6 entirely.</li>
+      <li>If there is income protection in place that is simply not recorded here, the first
+        coverage gap is a data problem rather than a plan problem.</li>
+    </ul>`)}
+
+    <div class="traced">
+      Every figure traces to the rules engine: load audit, money audit over 24 months, slippage
+      counts, dependency propagation, cadence counts. A review citing a number the engine did not
+      compute does not publish.
+    </div>
+  </div>
+
+  <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
+    <button class="btn" data-runreview="0">Close</button>
+    <button class="btn" data-noop="1">Publish as artifact</button>
+    <button class="btn" data-noop="1">Take to the quarterly session</button>
+  </div>`;
+}
+
+function sec(n, body){
+  const s = REVIEW_SECTIONS[n-1];
+  return `<div class="rsec"><div class="rsecn"><span>${s.n}</span><h3>${esc(s.h)}</h3></div>
+    ${body}</div>`;
+}
+
+function actCard(a){
+  const st = actionState.get(a.rank);
+  return `<div class="act">
+    <div class="rk">${a.rank}</div>
+    <div>
+      <h4>${esc(a.title)}</h4>
+      <div class="actmeta">
+        <div><b>Costs</b>${esc(a.cost)}</div>
+        <div><b>Forecloses</b>${esc(a.forecloses)}</div>
+        <div><b>Why here</b>${esc(a.why)}</div>
+        <div><b>When</b>${esc(a.when)}</div>
+      </div>
+      ${st ? `<div class="tiny faint" style="margin-top:10px">${st === 'accepted'
+          ? 'Accepted. Opens the milestone form prefilled, citing this review.'
+          : 'Declined, with the reason recorded.'}</div>`
+        : `<div class="actbtns">
+            <button class="btn sm pri" data-act="${a.rank}" data-v="accepted">Accept</button>
+            <button class="btn sm" data-act="${a.rank}" data-v="declined">Decline</button>
+          </div>`}
+    </div>
+  </div>`;
+}
+
+/* ===================== MONEY ===================== */
+function vMoney(){
+  const a = moneyAudit();
+  const maxY = Math.max(...a.rows.map(r => Math.max(r.total, r.inc))) * 1.06;
+  const grid = a.rows.map((r,i) => {
+    const showLab = i % 3 === 0 || r.gap > 0;
+    return `<div class="mcol">
+      <div class="mstack">
+        <div class="mline" style="bottom:${(r.inc/maxY*100).toFixed(2)}%"
+          title="income ${fmtM(r.inc)}"></div>
+        ${r.one ? `<div class="mbar one hit" style="height:${(r.one/maxY*100).toFixed(2)}%"
+          data-tip="mon:${r.mk}"></div>` : ''}
+        <div class="mbar ${r.gap>0?'over':''} hit" style="height:${(r.rec/maxY*100).toFixed(2)}%"
+          data-tip="mon:${r.mk}"></div>
+      </div>
+      <div class="mlab ${r.gap>0?'hit':''}">${showLab ? fmtYM(r.mk).replace(' 20',' ') : ''}</div>
+    </div>`;
+  }).join('');
+
+  return `<h1 class="page">Money</h1>
+  <p class="lede">What goes out against what comes in, month by month, for two years.
+  The same audit the health block runs on hours. A plan can exceed either capacity, and one
+  audited on only one of them is half audited.</p>
+
+  <div class="grid g3" style="margin-bottom:16px">
+    <div class="tile"><div class="k">Committed recurring, peak</div>
+      <div class="v ${a.ratio>0.6?'alert':''}">${Math.round(a.ratio*100)}<span style="font-size:.9rem;color:var(--ink-muted)">%</span></div>
+      <div class="n">of income in ${fmtYM(a.ratioAt)}, before any one-off</div></div>
+    <div class="tile"><div class="k">Months short, next 24</div>
+      <div class="v ${a.short.length?'alert':''}">${a.short.length}</div>
+      <div class="n">${a.short.length ? `worst is ${fmtYM(a.peak.mk)}` : 'none'}</div></div>
+    <div class="tile"><div class="k">Reserve</div>
+      <div class="v">${(MONEY.reserve.o.months + MONEY.reserve.l.months).toFixed(1)}<span style="font-size:.9rem;color:var(--ink-muted)"> mo</span></div>
+      <div class="n">combined, target 6 each</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="cardhd"><h2>24 month schedule</h2>
+      <span class="sub">line is income &middot; bars are outflow</span></div>
+    <div class="legend" style="margin-bottom:6px">
+      <span><i class="lgsw" style="background:var(--track-j);opacity:.45;border-radius:2px"></i>Recurring</span>
+      <span><i class="lgsw" style="background:var(--track-o);opacity:.75;border-radius:2px"></i>One-off</span>
+      <span><i class="lgsw" style="background:var(--st-crit);border-radius:2px"></i>Month is short</span>
+      <span><i class="lgsw" style="background:var(--ink);height:2px;border-radius:0"></i>Income</span>
+    </div>
+    <div class="scrollx"><div class="mgrid">${grid}</div></div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <div class="cardhd"><h2>Shortfall months</h2><span class="sub">named, with three numbers</span></div>
+      ${a.short.length ? a.short.map(r => `<div class="shortrow">
+        <b>${fmtYM(r.mk)}</b>
+        <span class="n" title="lands">${fmtM(r.total)}</span>
+        <span class="n" title="comes in">${fmtM(r.inc)}</span>
+        <span class="n gap">${fmtM(r.gap)} short</span>
+        <span class="tiny faint">${r.items.map(i=>esc(i.label)).join(', ') || 'recurring only'}</span>
+      </div>`).join('') : '<div class="tiny muted">No month in the next 24 is short.</div>'}
+      <p class="tiny faint" style="margin-top:13px">What lands, what comes in, the shortfall.
+      Never a ratio, and never "things look tight". The point of the detector is a sentence you
+      can act on.</p>
+    </div>
+
+    <div class="card">
+      <div class="cardhd"><h2>What the money rules found</h2></div>
+      ${a.stacked.map(([q,items])=>`<div class="itemline"><span class="ref">F-3</span><span>
+        <b>${q}</b> carries ${items.length} one-offs each above a month of income:
+        ${items.map(i=>esc(i.label)).join(' and ')}.<br>
+        <span class="tiny faint">Two large one-offs in one quarter is the most common way an
+        affordable plan turns out not to be.</span></span></div>`).join('')}
+      ${a.assumed.filter(s=>!s.built).map(s=>`<div class="itemline"><span class="ref">F-5</span><span>
+        <b>${esc(s.label)}</b> is assumed income with nothing building it.<br>
+        <span class="tiny faint">A plan that only works on income nobody committed to producing.</span>
+      </span></div>`).join('')}
+      ${a.assumed.filter(s=>s.built).map(s=>`<div class="itemline"><span class="ref">OK</span><span>
+        <b>${esc(s.label)}</b> is assumed, and ${s.builtBy} is building it.<br>
+        <span class="tiny faint">If that milestone slips, this income slips with it.</span>
+      </span></div>`).join('')}
+      <div class="itemline"><span class="ref">F-6</span><span>
+        <b>${Math.round(a.foreignShare*100)}% of committed outflow is in CAD</b>, earned in NGN,
+        governed by A-J-FIN-02 at ${MONEY.fx.CAD} per unit.<br>
+        <span class="tiny faint">That assumption is confidence low. A 20 percent move against you
+        adds roughly ${fmtM(a.foreign.reduce((x,o)=>x+o.amount,0)*0.2)} to the relocation total.
+        This is an FX position whether or not anyone called it one.</span></span></div>
+    </div>
+  </div>`;
+}
+
+/* ===================== ROUTER + EVENTS ===================== */
+function render(){
+  const v = document.getElementById('view');
+  let html;
+  switch(route){
+    case 't-o':     html = vTrack('o'); break;
+    case 't-l':     html = vTrack('l'); break;
+    case 'joint':   html = vTrack('j'); break;
+    case 'timeline':html = vTimeline(); break;
+    case 'decision':html = vDecision(); break;
+    case 'session': html = vSession(); break;
+    case 'logs':    html = vLogs(); break;
+    case 'members': html = vMembers(); break;
+    case 'findings':html = vFindings(); break;
+    case 'money':   html = vMoney(); break;
+    case 'review':  html = vReview(); break;
+    case 'decisions':html = vDecisions(); break;
+    case 'method':  html = vMethod(); break;
+    default:        html = vHome();
+  }
+  v.innerHTML = html;
+  const sh = document.getElementById('sheet'); if(sh){ sh.hidden = true; }
+  v.scrollIntoView ? window.scrollTo(0,0) : null;
+  renderNav(); renderViewerSeg(); save();
+}
+
+const tip = document.getElementById('tip');
+function showTip(e, html){
+  tip.innerHTML = html; tip.style.opacity = '1';
+  const r = tip.getBoundingClientRect();
+  let left = e.clientX + 14, top = e.clientY + 14;
+  if(left + r.width > innerWidth - 10) left = e.clientX - r.width - 14;
+  if(top + r.height > innerHeight - 10) top = e.clientY - r.height - 14;
+  tip.style.left = left + 'px'; tip.style.top = Math.max(8, top) + 'px';
+}
+function hideTip(){ tip.style.opacity = '0'; }
+
+function tipHtml(key){
+  const [kind, id] = key.split(':');
+  if(kind === 'ms'){
+    const m = byId(id); if(!m) return '';
+    const deps = DEPS.filter(d=>d.from===id||d.to===id);
+    return `<h4>${esc(m.title)}</h4>
+      <span class="r">${m.id} &middot; ${trackName(m.t)} &middot; ${fmtYM(m.target)}</span>
+      <div style="margin-top:6px">${m.t==='j'&&m.agree==='proposed'?'':pill(m.s)} ${agreePill(m)}</div>
+      ${m.note?`<div style="margin-top:6px;color:var(--ink-muted)">${esc(m.note)}</div>`:''}
+      ${(m.moves||[]).length>1?`<div style="margin-top:6px;color:var(--st-crit);font-family:var(--mono);font-size:.68rem">moved ${m.moves.length-1}&times;: ${m.moves.map(fmtYM).join(' &rarr; ')}</div>`:''}
+      ${deps.length?`<div style="margin-top:6px;color:var(--ink-faint);font-size:.72rem">${deps.map(d=>
+        d.from===id?`blocks ${d.to} (${d.nature})`:`waits on ${d.from} (${d.nature})`).join('<br>')}</div>`:''}`;
+  }
+  if(kind === 'collision'){
+    const c = COLLISIONS.find(c=>c.id===id); if(!c) return '';
+    const age = daysBetween(dstr(c.opened), TODAY);
+    return `<h4>${esc(c.tension)}</h4>
+      <span class="r">${c.id} &middot; ${c.kind} gap &middot; open ${age} days</span>
+      <div style="margin-top:6px;color:var(--ink-muted)">${fmtYM(c.from)} to ${fmtYM(c.to)},
+      ${c.tracks.map(trackName).join(' and ')}</div>`;
+  }
+  if(kind === 'mon'){
+    const a = moneyAudit(), r = a.rows.find(x => x.mk === id);
+    if(!r) return '';
+    return `<h4>${fmtYM(r.mk)}</h4>
+      <span class="r">${r.gap > 0 ? 'short by ' + fmtM(r.gap) : 'covered'}</span>
+      <div style="margin-top:6px;color:var(--ink-muted)">
+        recurring ${fmtM(r.rec)}${r.one ? ` &middot; one-off ${fmtM(r.one)}` : ''}<br>
+        income ${fmtM(r.inc)}</div>
+      ${r.items.length ? `<div style="margin-top:6px;font-size:.72rem;color:var(--ink-faint)">${
+        r.items.map(i=>esc(i.label)).join('<br>')}</div>` : ''}`;
+  }
+  if(kind === 'gate'){
+    const g = GATES.find(g=>g.id===id); if(!g) return '';
+    return `<h4>${esc(g.title)}</h4>
+      <span class="r">${g.id} &middot; decide by ${g.by}</span>
+      <div style="margin-top:6px;color:var(--ink-muted)">${g.brief?`Brief ${g.brief} exists.`:'No brief written yet.'}</div>`;
+  }
+  return '';
+}
+
+document.addEventListener('click', e => {
+  const nav = e.target.closest('[data-route]');
+  if(nav){ route = nav.dataset.route; render(); return; }
+
+  const vw = e.target.closest('[data-viewer]');
+  if(vw){ viewer = vw.dataset.viewer; render(); return; }
+
+  const tl = e.target.closest('[data-tl]');
+  if(tl){ tlFilter = tl.dataset.tl; render(); return; }
+
+  const tg = e.target.closest('[data-toggle]');
+  if(tg){
+    const code = tg.dataset.toggle;
+    openDoms.has(code) ? openDoms.delete(code) : openDoms.add(code);
+    render(); return;
+  }
+
+  const ag = e.target.closest('[data-agree]');
+  if(ag){
+    const m = byId(ag.dataset.agree), v = ag.dataset.v;
+    if(m){
+      m.hist = m.hist || [];
+      if(v === 'agreed'){ m.agree = 'agreed'; m.hist.push({e:'Agreed', who:viewer, at:'2026-08-25'}); }
+      else if(v === 'edit'){ m.hist.push({e:'Edit proposed', who:viewer, at:'2026-08-25'}); }
+      else { m.hist.push({e:'Sent to session', who:viewer, at:'2026-08-25'}); }
+    }
+    render(); return;
+  }
+
+  const me2 = e.target.closest('[data-medit]');
+  if(me2){ methodEdit = {k: me2.dataset.medit}; render(); return; }
+  if(e.target.closest('[data-mcancel]')){ methodEdit = null; render(); return; }
+  const mw = e.target.closest('[data-mwithdraw]');
+  if(mw){ const i = methodRequests.findIndex(r => r.k === mw.dataset.mwithdraw);
+    if(i >= 0) methodRequests.splice(i,1); render(); return; }
+  const ms = e.target.closest('[data-msave]');
+  if(ms){
+    const k = ms.dataset.msave, two = ms.dataset.two === '1';
+    const f0 = document.getElementById('mf0'), f1 = document.getElementById('mf1');
+    const reason = (f1 && f1.value.trim()) || '';
+    if(!reason){ f1.focus(); f1.style.borderColor = 'var(--st-crit)'; return; }
+    let item = null;
+    METHOD.groups.forEach(g => g.items.forEach(x => { if(x.k === k) item = x; }));
+    if(two){
+      methodRequests.push({k, label:item.label, reason, at:'2026-08-25',
+        by:viewer, status:'pending'});
+    } else {
+      item.v = f0.value;
+      METHOD.version += 1;
+      METHOD.history.unshift({v:METHOD.version, at:'2026-08-25', by:viewer, note:reason});
+    }
+    methodEdit = null; render(); return;
+  }
+
+  const rz = e.target.closest('[data-resolve]');
+  if(rz){
+    const kind = rz.dataset.kind;
+    if(kind === 'decide'){
+      DEC2.from = rz.dataset.resolve; route = 'decisions'; resolveMode = null; render(); return;
+    }
+    resolveMode = {id: rz.dataset.resolve, kind}; render(); return;
+  }
+  if(e.target.closest('[data-rcancel]')){ resolveMode = null; render(); return; }
+  const rs = e.target.closest('[data-rsave]');
+  if(rs){
+    const f1 = document.getElementById('rf1'), f2 = document.getElementById('rf2'),
+          f3 = document.getElementById('rf3');
+    const c = COLLISIONS.find(x => x.id === resolveMode.id);
+    if(rs.dataset.rsave === 'accept'){
+      c.status = 'accepted';
+      resolutionLog.push({id:c.id, verb:'accepted', at:'2026-08-25', by:viewer,
+        detail:`Cost accepted: ${f1.value} Carried by ${f2.value==='j'?'both, split':MEMBERS[f2.value].name}.`});
+    } else {
+      c.nextStep = f1.value; c.nextOwner = f2.value; c.nextDue = f3.value;
+      resolutionLog.push({id:c.id, verb:'left open with a next step', at:'2026-08-25', by:viewer,
+        detail:`${f1.value}. Owner ${MEMBERS[f2.value].name}, due ${f3.value}.`});
+    }
+    resolveMode = null; render(); return;
+  }
+
+  const rr = e.target.closest('[data-runreview]');
+  if(rr){ reviewRun = rr.dataset.runreview === '1'; route = 'review'; render(); return; }
+
+  const ac = e.target.closest('[data-act]');
+  if(ac){ actionState.set(+ac.dataset.act, ac.dataset.v); render(); return; }
+
+  const dm = e.target.closest('[data-dismiss]');
+  if(dm){ dismissed.set(dm.dataset.dismiss, dm.dataset.reason); render(); return; }
+
+  if(e.target.closest('[data-wreset]')){
+    liveW.o = {...DEC.weights.o}; liveW.l = {...DEC.weights.l};
+    render(); return;
+  }
+  if(e.target.closest('[data-privlog]')){ route = 'members'; render(); return; }
+  if(e.target.closest('[data-addmember]')){
+    alert('Adding a member beyond the second needs both principals to act.\n\nIn the built app this opens a request that the other principal has to approve, and shows the one-time note about what changes when a third person can see the plan.');
+    return;
+  }
+});
+
+document.addEventListener('input', e => {
+  const w = e.target.closest('[data-w]');
+  if(!w) return;
+  liveW[viewer][w.dataset.w] = +w.value;
+  render();
+  const again = document.querySelector(`[data-w="${w.dataset.w}"]`);
+  if(again) again.focus();
+});
+
+/* hover is the optional desktop convenience. Tap and keyboard are the real path. */
+const sheet = document.getElementById('sheet');
+let sheetKey = null;
+function openSheet(key, anchor){
+  const html = tipHtml(key); if(!html) return;
+  sheetKey = key;
+  sheet.innerHTML = `<button class="close" data-sheetclose="1" aria-label="Close">&times;</button>${html}`;
+  sheet.hidden = false;
+  hideTip();
+  if(window.innerWidth > 700 && anchor){
+    const r = anchor.getBoundingClientRect(), s = sheet.getBoundingClientRect();
+    let left = Math.min(r.left + 18, innerWidth - s.width - 12);
+    let top  = Math.min(r.top + 14, innerHeight - s.height - 12);
+    sheet.style.left = Math.max(12, left) + 'px';
+    sheet.style.top  = Math.max(12, top) + 'px';
+  } else {
+    sheet.style.left = ''; sheet.style.top = '';
+  }
+  const c = sheet.querySelector('.close'); if(c) c.focus();
+}
+function closeSheet(){ sheet.hidden = true; sheetKey = null; }
+
+document.addEventListener('mouseover', e => {
+  if(!sheet.hidden) return;
+  const h = e.target.closest('.hit');
+  if(h && h.dataset.tip){ const html = tipHtml(h.dataset.tip); if(html) showTip(e, html); }
+});
+document.addEventListener('mousemove', e => {
+  if(!sheet.hidden) { hideTip(); return; }
+  const h = e.target.closest('.hit');
+  if(h && h.dataset.tip){ const html = tipHtml(h.dataset.tip); if(html) showTip(e, html); }
+  else hideTip();
+});
+document.addEventListener('mouseleave', hideTip);
+window.addEventListener('blur', hideTip);
+
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-sheetclose]')){ closeSheet(); return; }
+  const h = e.target.closest('.hit');
+  if(h && h.dataset.tip){
+    if(sheetKey === h.dataset.tip) closeSheet(); else openSheet(h.dataset.tip, h);
+    return;
+  }
+  if(!sheet.hidden && !e.target.closest('#sheet')) closeSheet();
+}, true);
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !sheet.hidden){ closeSheet(); return; }
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const h = e.target.closest && e.target.closest('.hit');
+  if(h && h.dataset.tip){
+    e.preventDefault();
+    if(sheetKey === h.dataset.tip) closeSheet(); else openSheet(h.dataset.tip, h);
+  }
+});
+
+render();
+</script>

@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* Tokens lifted from the prototype. Light is the bare :root palette, dark is
+   applied for an explicit choice and for the system default. */
+:root {
+  --ground:#F4F5F2; --surface:#FFFFFF; --surface-2:#EDEFEA; --surface-3:#E4E7E0;
+  --ink:#191E1C; --ink-muted:#5D6764; --ink-faint:#8A938F;
+  --rule:#DCE0DA; --rule-strong:#C3C9C0;
+  --brand:#35655C; --brand-soft:#E3EDEA; --on-brand:#FFFFFF;
+  --track-a:#2a78d6; --track-b:#eb6834; --track-j:#6B7370;
+  --st-good:#0ca30c; --st-warn:#fab219; --st-serious:#ec835a; --st-crit:#d03b3b;
+  --st-muted:#8A938F;
+  --shadow:0 1px 2px rgba(25,30,28,.05), 0 4px 14px rgba(25,30,28,.05);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"IBM Plex Serif",Georgia,serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#121614; --surface:#1B2220; --surface-2:#222B28; --surface-3:#2A3431;
+    --ink:#E4E8E4; --ink-muted:#A0AAA6; --ink-faint:#79837F;
+    --rule:#2E3835; --rule-strong:#3D4A46;
+    --brand:#6FA79B; --brand-soft:#22322E; --on-brand:#0F1614;
+    --track-a:#3987e5; --track-b:#d95926; --track-j:#97A19D;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:#121614; --surface:#1B2220; --surface-2:#222B28; --surface-3:#2A3431;
+  --ink:#E4E8E4; --ink-muted:#A0AAA6; --ink-faint:#79837F;
+  --rule:#2E3835; --rule-strong:#3D4A46;
+  --brand:#6FA79B; --brand-soft:#22322E; --on-brand:#0F1614;
+  --track-a:#3987e5; --track-b:#d95926; --track-j:#97A19D;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-track-a: var(--track-a);
+  --color-track-b: var(--track-b);
+  --color-track-j: var(--track-j);
+  --color-good: var(--st-good);
+  --color-warn: var(--st-warn);
+  --color-serious: var(--st-serious);
+  --color-crit: var(--st-crit);
+  --color-muted: var(--st-muted);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+  --font-serif: var(--serif);
+}
+
+html, body { background: var(--ground); color: var(--ink); }
+body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+/* Recurring compositions the prototype uses everywhere. */
+@utility kicker {
+  font-family: var(--mono);
+  font-size: .64rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+@utility card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+@utility ref {
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--ink-faint);
+}
+@utility tnum { font-variant-numeric: tabular-nums; }
+
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

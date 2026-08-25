@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "crons": [
+    { "path": "/api/cron/cadence", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/collisions", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/prep", "schedule": "0 7 * * 1" }
+  ]
+}
