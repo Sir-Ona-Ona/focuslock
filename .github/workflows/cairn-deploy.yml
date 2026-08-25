@@ -39,6 +39,13 @@ jobs:
       run:
         working-directory: cairn
 
+    # Whether a deploy is even possible. Checked here because the secrets
+    # context is not available in a job level if, and a repository with no
+    # token yet should skip the deploy rather than fail it: a red cross on
+    # main that means "not configured" trains people to ignore red crosses.
+    outputs:
+      has_token: ${{ steps.token.outputs.present }}
+
     # The row level policies are the enforcement mechanism for every privacy and
     # authorship rule in Cairn, so the suite that proves them runs against a real
     # Postgres here. Skipping them would let a green run mean nothing.
@@ -65,6 +72,18 @@ jobs:
           node-version-file: cairn/.nvmrc
           cache: npm
           cache-dependency-path: cairn/package-lock.json
+
+      - name: Look for a Vercel token
+        id: token
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "${VERCEL_TOKEN:-}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VERCEL_TOKEN is not set, so the deploy will be skipped. The checks still run."
+          fi
 
       - name: Install
         run: npm ci
@@ -101,6 +120,7 @@ jobs:
   deploy:
     name: Build and deploy
     needs: verify
+    if: needs.verify.outputs.has_token == 'true'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     defaults:
