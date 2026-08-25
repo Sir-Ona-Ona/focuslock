@@ -143,15 +143,22 @@ gave and claims their own track.
 
 ### Deploying from GitHub Actions instead
 
-Two workflows do the same thing without anyone running commands locally:
-`.github/workflows/cairn-deploy.yml` builds and deploys, and
-`.github/workflows/cairn-migrate.yml` applies migrations. Both are manual
-(`workflow_dispatch`); the deploy also runs on a push to `main` that touches
-`cairn/`.
+Two workflows do the whole thing without anyone running a command locally.
+
+`.github/workflows/cairn-migrate.yml` applies the migrations, seeds the method,
+gives `cairn_app` its password, and finishes by asserting that `cairn_app`
+cannot bypass row level security, failing if it can. Manual, with a typed
+confirmation.
+
+`.github/workflows/cairn-deploy.yml` runs the full test suite against a real
+Postgres service container, including the row level security suite, then links
+the Vercel project (creating it on the first run), syncs the environment from
+secrets, builds, deploys, and checks what the deployed site reports about
+itself. Manual, or on a push to `main` that touches `cairn/`.
 
 They exist because the Claude Code environment that builds Cairn cannot reach
-`api.vercel.com` or `api.supabase.com`: the network policy denies both. GitHub
-runners have no such restriction, and the credentials live in repository
+`api.vercel.com` or `api.supabase.com`: the organization's egress policy denies
+both. GitHub runners are not restricted, and the credentials live in repository
 secrets rather than in a terminal history.
 
 Add these under Settings, Secrets and variables, Actions:
@@ -165,19 +172,25 @@ Add these under Settings, Secrets and variables, Actions:
 | `CAIRN_ANTHROPIC_API_KEY` | deploy | Optional. Facilitated reviews only |
 | `CAIRN_CRON_SECRET` | deploy | Optional until phase 6 |
 | `CAIRN_DIRECT_URL` | migrate | The owner connection, port 5432. Never goes to Vercel |
-| `CAIRN_APP_DB_PASSWORD` | migrate | The password to set on `cairn_app` |
+| `CAIRN_APP_DB_PASSWORD` | migrate | The password to give `cairn_app`. Any characters are fine |
 
-Optionally set the repository variable `VERCEL_PROJECT_NAME` if you want the
-Vercel project called something other than `cairn`.
+Two optional repository variables: `VERCEL_PROJECT_NAME` if you want the project
+called something other than `cairn`, and `VERCEL_TEAM` if the token's account
+has more than one team.
 
-Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`. The
-migration workflow finishes by asserting that `cairn_app` cannot bypass row
-level security, and fails if it can.
+Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`.
+
+Every step of both workflows was rehearsed locally against a real Postgres
+before being committed: the migration run, the password step against a password
+containing quotes, dollar quotes and backslashes, the full 84 test suite over a
+password-authenticated TCP connection, and the row level security assertion in
+both directions, confirming it passes when the role is scoped and fails when it
+is not. Every Vercel CLI flag was checked against the pinned CLI version rather
+than recalled.
 
 **One prerequisite:** GitHub only offers the Run workflow button for workflows
 that exist on the default branch, so these have to reach `main` before they can
-be dispatched. Merging the branch is the same step that a push-triggered deploy
-would need anyway.
+be dispatched.
 
 ### Scheduled routes
 

@@ -1,9 +1,9 @@
 name: Deploy Cairn to Vercel
 
-# The Claude Code environment that builds Cairn cannot reach api.vercel.com:
-# the network policy denies it. GitHub runners have no such restriction, so the
-# deploy runs here instead, and the token lives in repository secrets rather
-# than in anyone's terminal history.
+# The Claude Code environment that builds Cairn cannot reach api.vercel.com or
+# api.supabase.com: the organization's egress policy denies both at the CONNECT
+# stage. GitHub runners are not restricted, so the deploy runs here and the
+# credentials live in repository secrets rather than in a terminal history.
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
         description: Deploy to production or a preview
         type: choice
         options: [production, preview]
-        default: preview
+        default: production
   push:
     branches:
       - main
@@ -24,10 +24,85 @@ concurrency:
   group: cairn-deploy-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Pinned rather than latest: every flag below was verified against this
+  # version, and a CLI that changes an option name should fail review, not a
+  # production deploy.
+  VERCEL_CLI_VERSION: '59.5.0'
+  TARGET: ${{ github.event.inputs.environment || 'production' }}
+
 jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cairn
+
+    # The row level policies are the enforcement mechanism for every privacy and
+    # authorship rule in Cairn, so the suite that proves them runs against a real
+    # Postgres here. Skipping them would let a green run mean nothing.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cairn
+          POSTGRES_PASSWORD: cairn
+          POSTGRES_DB: cairn
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cairn/.nvmrc
+          cache: npm
+          cache-dependency-path: cairn/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Check for method values written as literals
+        run: npm run check:literals
+
+      - name: Apply migrations to the test database
+        env:
+          DIRECT_URL: postgres://cairn:cairn@localhost:5432/cairn
+        run: npm run db:push
+
+      - name: Give the application role a password
+        env:
+          DIRECT_URL: postgres://cairn:cairn@localhost:5432/cairn
+        run: |
+          node -e '
+            const postgres = require("postgres");
+            const sql = postgres(process.env.DIRECT_URL, { max: 1 });
+            sql.unsafe("alter role cairn_app with login password $$cairn_app$$")
+              .then(() => sql.end())
+              .catch(async (e) => { console.error(e.message); await sql.end(); process.exit(1); });
+          '
+
+      - name: Test, including the row level security suite
+        env:
+          DIRECT_URL: postgres://cairn:cairn@localhost:5432/cairn
+          DATABASE_URL: postgres://cairn_app:cairn_app@localhost:5432/cairn
+        run: npm test
+
   deploy:
     name: Build and deploy
+    needs: verify
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
     defaults:
       run:
         working-directory: cairn
@@ -44,38 +119,35 @@ jobs:
       - name: Install
         run: npm ci
 
-      # The checks that do not need a database. The suites that do are skipped
-      # rather than passed, so a green run here never implies they ran.
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Check for method values written as literals
-        run: npm run check:literals
-
-      - name: Test
-        run: npm test
-
       - name: Install the Vercel CLI
-        run: npm i -g vercel@latest
+        run: npm i -g "vercel@${VERCEL_CLI_VERSION}"
 
-      - name: Link the project, creating it on first run
+      - name: Create the project if it does not exist, then link
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          PROJECT: ${{ vars.VERCEL_PROJECT_NAME || 'cairn' }}
+          SCOPE: ${{ vars.VERCEL_TEAM }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
             echo "VERCEL_TOKEN is not set. Add it under Settings, Secrets and variables, Actions."
             exit 1
           fi
-          vercel link --yes --project "${{ vars.VERCEL_PROJECT_NAME || 'cairn' }}" \
-            --token "$VERCEL_TOKEN"
+          scope_args=()
+          [ -n "${SCOPE:-}" ] && scope_args=(--scope "$SCOPE")
 
-      # Only runs for a secret that is actually set, so a partially configured
-      # project is not silently overwritten with empty values.
+          # Fails harmlessly when the project is already there, which is the
+          # ordinary case on every run after the first.
+          vercel project add "$PROJECT" --token "$VERCEL_TOKEN" "${scope_args[@]}" \
+            || echo "Project $PROJECT already exists, continuing."
+
+          vercel link --yes --project "$PROJECT" --token "$VERCEL_TOKEN" "${scope_args[@]}"
+
+      # Only writes a variable whose secret is actually set, so a half
+      # configured project is never overwritten with empty values.
       - name: Sync environment variables from repository secrets
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          TARGET: ${{ github.event.inputs.environment || 'production' }}
           DATABASE_URL: ${{ secrets.CAIRN_DATABASE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.CAIRN_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.CAIRN_SUPABASE_ANON_KEY }}
@@ -84,31 +156,33 @@ jobs:
         run: |
           set -euo pipefail
           sync() {
-            local name="$1" value="$2"
+            local name="$1" value="$2" sensitivity="$3"
             if [ -z "$value" ]; then
               echo "skip  $name, no secret set"
               return
             fi
-            vercel env rm "$name" "$TARGET" --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-            printf '%s' "$value" | vercel env add "$name" "$TARGET" --token "$VERCEL_TOKEN"
+            vercel env add "$name" "$TARGET" \
+              --value "$value" --force "$sensitivity" \
+              --token "$VERCEL_TOKEN" >/dev/null
             echo "set   $name"
           }
-          sync DATABASE_URL "$DATABASE_URL"
-          sync NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
-          sync NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-          sync ANTHROPIC_API_KEY "$ANTHROPIC_API_KEY"
-          sync CRON_SECRET "$CRON_SECRET"
+          # The anon key and the project URL are public by design: they reach the
+          # browser, and they grant nothing on their own because authorization
+          # lives in the database.
+          sync DATABASE_URL "${DATABASE_URL:-}" --sensitive
+          sync NEXT_PUBLIC_SUPABASE_URL "${NEXT_PUBLIC_SUPABASE_URL:-}" --no-sensitive
+          sync NEXT_PUBLIC_SUPABASE_ANON_KEY "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" --no-sensitive
+          sync ANTHROPIC_API_KEY "${ANTHROPIC_API_KEY:-}" --sensitive
+          sync CRON_SECRET "${CRON_SECRET:-}" --sensitive
 
       - name: Pull the project settings
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          TARGET: ${{ github.event.inputs.environment || 'production' }}
         run: vercel pull --yes --environment="$TARGET" --token "$VERCEL_TOKEN"
 
       - name: Build
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          TARGET: ${{ github.event.inputs.environment || 'production' }}
         run: |
           if [ "$TARGET" = "production" ]; then
             vercel build --prod --token "$VERCEL_TOKEN"
@@ -120,15 +194,28 @@ jobs:
         id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          TARGET: ${{ github.event.inputs.environment || 'production' }}
         run: |
+          set -euo pipefail
           if [ "$TARGET" = "production" ]; then
             url=$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN")
           else
             url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN")
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed to $url"
+
+      - name: Check what the deployment reports about itself
+        run: |
+          set -euo pipefail
+          url="${{ steps.deploy.outputs.url }}"
+          body=$(curl -sS --max-time 30 -L "$url/sign-in" || true)
+          if printf '%s' "$body" | grep -q "Not configured yet"; then
+            echo "::warning::Deployed, but the environment is incomplete. The site names what is missing."
+          elif printf '%s' "$body" | grep -q "Refusing to serve"; then
+            echo "::error::DATABASE_URL connects as a role that can bypass row level security."
+            exit 1
+          else
+            echo "The deployment is serving normally."
+          fi
 
       - name: Summarise
         run: |
@@ -137,6 +224,5 @@ jobs:
             echo ""
             echo "${{ steps.deploy.outputs.url }}"
             echo ""
-            echo "If the site reports missing configuration, the secrets above are not all set."
-            echo "Migrations are a separate workflow and do not run on deploy."
+            echo "Migrations are a separate workflow and never run on deploy."
           } >> "$GITHUB_STEP_SUMMARY"
