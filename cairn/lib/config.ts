@@ -37,8 +37,9 @@ export function configState(): ConfigState {
     {
       name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       present: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-      what: 'The Supabase anon key. Safe in the browser: it grants nothing on its own, '
-        + 'because authorization lives in the database rather than in the client.',
+      what: 'The Supabase publishable key, the one beginning sb_publishable_ (the legacy anon '
+        + 'JWT also works). Safe in the browser: it grants nothing on its own, because '
+        + 'authorization lives in the database rather than in the client.',
     },
   ];
 

@@ -118,7 +118,7 @@ repository also holds an unrelated project at its root, so this is required.
 |----------|-------|
 | `DATABASE_URL` | `postgres://cairn_app:PASSWORD@db.PROJECT.supabase.co:6543/postgres?pgbouncer=true` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Your project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your anon key |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The publishable key, beginning `sb_publishable_` |
 | `ANTHROPIC_API_KEY` | Optional. Facilitated reviews only |
 | `CRON_SECRET` | Optional until phase 6 |
 
@@ -126,8 +126,17 @@ Port 6543 is the pooler, which is what a serverless runtime should use. Keep
 `DIRECT_URL` out of Vercel entirely: it is the owner connection and belongs
 only wherever you run migrations.
 
-`SUPABASE_SERVICE_ROLE_KEY` is not needed and should not be set. Nothing in a
-request path uses it.
+**No key that can bypass row level security is needed anywhere.** Not the secret
+key (`sb_secret_`), not the legacy `service_role` JWT, not
+`SUPABASE_SERVICE_ROLE_KEY`. Cairn enforces authorization in the database
+against the `cairn_app` role, so there is no request path that could hold one.
+If you are looking at the API Keys screen wondering which secret to copy, the
+answer is none of them: only the publishable key and the database password.
+
+The publishable key is safe in the browser, which is what the Supabase screen
+means by "safe to use in a browser if you have enabled Row Level Security". RLS
+is on for every table in Cairn from the first migration, so that condition is
+met.
 
 ### 6. Point Supabase auth at the deployment
 
@@ -184,7 +193,7 @@ Vercel dashboard.
 | `VERCEL_TOKEN` | deploy | A Vercel API token. Scope it to the team and give it an expiry |
 | `CAIRN_DATABASE_URL` | deploy | The pooled connection, as `cairn_app`, port 6543 |
 | `CAIRN_SUPABASE_URL` | deploy | The Supabase project URL |
-| `CAIRN_SUPABASE_ANON_KEY` | deploy | The anon key |
+| `CAIRN_SUPABASE_ANON_KEY` | deploy | The **publishable** key, beginning `sb_publishable_` |
 | `CAIRN_ANTHROPIC_API_KEY` | deploy | Optional. Facilitated reviews only |
 | `CAIRN_CRON_SECRET` | deploy | Optional until phase 6 |
 | `CAIRN_DIRECT_URL` | migrate | The owner connection, port 5432. Never goes to Vercel |
