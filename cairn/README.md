@@ -22,7 +22,7 @@ document those depend on someone noticing. Here they are queries.
 | 1 | Individual track CRUD across seven domains, private flags with disclosure, hours and money capture | Built |
 | 2 | Joint plan, the three-response agreement lifecycle, pending queues | Built |
 | 3 | Timeline | Built |
-| G | Product direction gate, run as a decision brief against a spike | Not started |
+| G | Product direction gate | **Closed: product now (OD-7).** Multi-household built. Billing, onboarding and marketing pending |
 | 4 | Rules engine, then Claude-facilitated reviews on top of it | Rules engine built and tested. Model flows not started |
 | 5 to 8 | Decisions, sessions, members beyond two, the advisory layer | Schema and registry seeded, behaviour not built |
 
@@ -133,9 +133,25 @@ A hardcoded threshold, timebox, domain list or prompt anywhere in `app/`,
 Where a number genuinely is not a method value, the line says so:
 `// method-literal-ok: <reason>`.
 
+## Product direction
+
+The gate between phase 3 and phase 4 closed on 2026-08-25 as **product now**,
+recorded as OD-7 in [the product spec](./docs/PRODUCT-SPEC.md). Multi-household,
+billing, onboarding and a marketing surface are in scope and build alongside
+phases 4 to 8.
+
+Two things follow from how it closed. The spike did not run, so nobody has
+measured token cost per flow, and pricing has no measured floor under it until
+phase 4 instruments per-household cost. And OD-4, pooled and included, is
+reopened as OD-8: it was decided for two people, where model cost is a personal
+expense, and it does not survive a product where cost scales with engagement.
+
+The build order inside phase 4 is unchanged. The rules engine still ships and is
+tested before any model flow, and multi-tenancy relaxes no invariant: a second
+household is another `household_id`, not a weaker policy.
+
 ## What is deliberately not here
 
-Billing, onboarding flows, marketing pages, multi-household, native apps,
-internationalisation, sharing outside a household, realtime collaboration, a
-charting library, and any averaged weight in any form. Section 14 of the build
-specification has the full list and the reasoning.
+Teams, native apps, internationalisation, sharing outside a household, realtime
+collaboration, a charting library, and any averaged weight in any form. Section
+14 of the build specification has the full list and the reasoning.

@@ -665,7 +665,7 @@ phone in a room together.
 | 1 | Individual track CRUD across seven domains, goals, milestones, assumptions, risks, constraints, private flags with disclosure at marking, `domain_load` and `obligation` capture, plus `income` and `reserve` in the finance block | One person can run their whole track by hand, costed in both hours and money |
 | 2 | Joint plan, agreement lifecycle, dependencies, pending queue | The joint plan is real and proposed means something |
 | 3 | Timeline | The picture exists |
-| **G** | **Product direction gate.** See below. Nothing in phase 4 starts until this closes | A direction is written down with its reasoning |
+| **G** | **Product direction gate.** Closed: product now (OD-7). Phases 4 to 8 build as specified, with the product surface alongside them | Closed 2026-08-25 |
 | 4 | Computed rules engine including the load audit and the money audit, then Claude-facilitated reviews on top of it | The discipline becomes automatic, and the plan is tested against both capacities |
 | 5 | Decisions with dual weighting and sensitivity | Heavy calls get worked properly |
 | 6 | Strategy sessions with block and break enforcement, scheduled prep briefs, notifications, collision scanning with the private-read path and its log | The full method |
@@ -681,6 +681,11 @@ what exists is still a working planning system, which is a better failure mode t
 interface with no data model under it.
 
 ### The gate between phase 3 and phase 4
+
+**Closed on 2026-08-25. The direction is "product now" (OD-7).** What follows is the gate as it
+was framed, kept because the reasoning is what a future maintainer will need, and because the
+gate was decided on the owner's judgement rather than on the spike it was designed to consume.
+Section 12 records what that costs and what it opens.
 
 Product direction is decided here, before any phase 4 work starts (OD-3). The gate exists because
 phases 4 through 7 are where private and product diverge in cost, and deciding after them means
@@ -798,13 +803,52 @@ deleted, because the reasoning is what a future maintainer will need.
 | OD-5 | Members beyond two | **Schema holds up to six, UI ships for two, add-member is an enabled function.** Three roles: principal, dependent, advisor. Section 3 has the model |
 | OD-6 | Name | **Cairn** |
 | OD-3 | When product direction is decided | **Before phase 4**, at an explicit gate between phase 3 and phase 4, informed by a spike that runs the facilitated flows by hand against real phase 3 data. Section 8 has the gate, its evidence and its three directions |
+| OD-7 | Product direction, at the gate | **Product now.** Multi-household, billing, onboarding and a marketing surface are built alongside phases 4 to 8. Decided by the owner without the spike, so the cost evidence the direction turns on does not exist yet. See below |
+
+### OD-7, and what it opens
+
+**Decision: product now.** Recorded 2026-08-25 by the owner, closing the gate in section 8.
+
+**What it changes immediately.** Section 14 of the build specification listed billing, metering,
+onboarding, a marketing surface and multi-household as scope drift if started before the gate.
+The gate is closed, so they are in scope. Section 10's list of what was deliberately not built
+is superseded for those five items and stands for the rest.
+
+**What it does not change.** The build order inside phase 4 is untouched: the rules engine still
+ships and is tested before any model flow. Product work runs alongside phase 4, not in front of
+it. Every invariant in section 2 of the build specification holds unchanged, and multi-tenancy
+does not relax one of them: a second household is another `household_id`, not a weaker policy.
+
+**What it was decided without.** The spike in section 8 did not run. Nobody has measured token
+cost per flow, and nobody has written down whether a facilitated review beats doing the same
+review by hand in the app. Two consequences follow, and both are consequences rather than
+objections:
+
+1. **Pricing has no cost floor under it.** The spike's number was to be the input to pricing.
+   Without it, any price is a guess about the largest running cost in the system. Instrumenting
+   per-household cost by flow from the first facilitated review recovers the number, but it
+   arrives during phase 4 rather than before it, so pricing cannot be fixed until then.
+2. **The usage criterion was not tested.** The gate named one criterion as outranking the
+   others: are both principals actually using it, with both tracks claimed and the joint review
+   held on cadence for two months. Nothing is deployed, so that question is unanswered rather
+   than answered no. If the answer turns out to be no, the product case rests on a household
+   that will not sustain the tool, which section 13 names as the most likely failure by a wide
+   margin.
+
+**What follows from it.** OD-4 is reopened as OD-8. Pooled and included was decided for two
+people, where model cost is a personal expense. It does not survive a product: cost scales with
+engagement, which is the wrong direction for margin, and the 210 minute quarterly session is the
+largest single-context cost in the system. A pricing and metering decision is now required and
+is recorded separately.
 
 ### Still open
 
-None. All six decisions opened with this document are closed.
+| ID | Decision | Needs |
+|----|----------|-------|
+| OD-8 | Pricing and model cost, reopening OD-4 | Per-household cost by flow, instrumented from the first facilitated review in phase 4 |
 
-New decisions get IDs continuing from OD-7 and are recorded here with their reasoning rather
-than replacing what is above. The gate in section 8 will produce at least one.
+New decisions get IDs continuing from OD-9 and are recorded here with their reasoning rather
+than replacing what is above.
 
 ### Where OD-3 and OD-4 meet
 

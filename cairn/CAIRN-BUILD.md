@@ -1599,6 +1599,12 @@ upstream item slips.
 
 ### Gate: product direction
 
+**Closed on 2026-08-25: product now (OD-7).** Multi-household, billing, onboarding and a
+marketing surface are in scope and build alongside phases 4 to 8. The spike below did not run,
+so pricing has no measured cost under it: instrument per-household cost by flow from the first
+facilitated review, and treat OD-8 in the product spec as the open decision it feeds. The
+paragraph that follows is the gate as it was framed, kept for its reasoning.
+
 **Nothing in phase 4 starts until this closes.** Run the spike first: export the real phase 3
 data to the markdown format the prototype skills use, run two individual reviews, one joint
 review, one individual strategy session and one decision brief by hand through the skills,
@@ -1792,11 +1798,18 @@ that could violate an invariant.
 
 ## 14. Do not build
 
-Not in scope, and adding any of them before the gate is scope drift:
+The gate closed as "product now" (OD-7), so the first three entries below are now in scope and
+are struck through. Everything after them still stands.
 
-- Billing or usage metering. Model usage is included, not charged.
-- Onboarding flows, marketing pages, a landing site.
-- Multi-household or team features.
+- ~~Billing or usage metering. Model usage is included, not charged.~~ In scope. OD-4 is
+  reopened as OD-8: pooled and included was decided for two people and does not survive a
+  product, because cost scales with engagement.
+- ~~Onboarding flows, marketing pages, a landing site.~~ In scope.
+- ~~Multi-household or team features.~~ Multi-household is in scope. Teams are not: a household
+  is the tenant, and a team is a different product.
+
+Still not in scope, and adding any of them is scope drift:
+
 - Native apps. The web app is responsive and that is the mobile story.
 - Internationalisation.
 - Sharing outside a household.

@@ -9,6 +9,7 @@ import { proposedCycles } from '@/lib/rules/agreement';
 import { method } from '@/lib/method/accessor';
 import { Nav, type NavGroup } from '@/components/ui/Nav';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { HouseholdSwitcher } from '@/components/ui/HouseholdSwitcher';
 import { trackToken } from '@/components/ui/vocab';
 
 export const dynamic = 'force-dynamic';
@@ -112,8 +113,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </span>
           <div>
             <Link href="/" className="font-serif text-[1.05rem] leading-none">Cairn</Link>
-            <div className="mt-1 font-mono text-[.62rem] uppercase tracking-[.14em] text-ink-faint">
-              Household plan
+            <div className="mt-1 max-w-[150px] truncate font-mono text-[.62rem] uppercase
+                            tracking-[.14em] text-ink-faint" title={viewer.householdName}>
+              {viewer.householdName}
             </div>
           </div>
         </div>
@@ -136,6 +138,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             {viewer.displayName}
           </span>
           <div className="ml-auto flex items-center gap-2">
+            <HouseholdSwitcher
+              memberships={viewer.memberships}
+              currentHouseholdId={viewer.householdId}
+            />
             <ThemeToggle />
           </div>
         </div>
