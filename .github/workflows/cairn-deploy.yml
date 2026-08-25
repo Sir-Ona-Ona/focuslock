@@ -122,7 +122,15 @@ jobs:
     needs: verify
     if: needs.verify.outputs.has_token == 'true'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    # No environment: key on purpose. An environment scopes its own secrets to
+    # jobs that name it, and the token check lives in the verify job, which does
+    # not. A token added as an environment secret would be invisible there, the
+    # gate above would read false, and the deploy would skip forever with
+    # nothing on screen to say why. Every secret here is a repository secret.
+    #
+    # To add a manual approval before production later, create an environment
+    # with a required reviewer, name it here, and move VERCEL_TOKEN's presence
+    # check into this job.
     defaults:
       run:
         working-directory: cairn

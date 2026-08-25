@@ -161,7 +161,23 @@ They exist because the Claude Code environment that builds Cairn cannot reach
 both. GitHub runners are not restricted, and the credentials live in repository
 secrets rather than in a terminal history.
 
-Add these under Settings, Secrets and variables, Actions:
+**Where they go.** GitHub repository secrets, not Vercel and not a file in the
+repo:
+
+`https://github.com/Sir-Ona-Ona/focuslock/settings/secrets/actions`
+
+Repo, then Settings, then Secrets and variables, then Actions, then New
+repository secret. Add each one on the **Secrets** tab as a *repository* secret.
+
+Not an environment secret. An environment scopes its secrets to jobs that name
+that environment, and the check that decides whether a deploy can run lives in
+the verify job, which does not name one. A token added as an environment secret
+would be invisible there and the deploy would skip silently.
+
+You enter these once, here. The deploy workflow pushes the four application
+values into the Vercel project itself, so there is nothing to type into the
+Vercel dashboard.
+
 
 | Secret | Used by | What |
 |--------|---------|------|
@@ -174,9 +190,10 @@ Add these under Settings, Secrets and variables, Actions:
 | `CAIRN_DIRECT_URL` | migrate | The owner connection, port 5432. Never goes to Vercel |
 | `CAIRN_APP_DB_PASSWORD` | migrate | The password to give `cairn_app`. Any characters are fine |
 
-Two optional repository variables: `VERCEL_PROJECT_NAME` if you want the project
-called something other than `cairn`, and `VERCEL_TEAM` if the token's account
-has more than one team.
+Two optional entries go on the **Variables** tab of that same page rather than
+the Secrets tab, because neither is secret: `VERCEL_PROJECT_NAME` if you want
+the project called something other than `cairn`, and `VERCEL_TEAM` if the
+token's account has more than one team.
 
 Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`.
 
