@@ -191,7 +191,7 @@ Vercel dashboard.
 | Secret | Used by | What |
 |--------|---------|------|
 | `VERCEL_TOKEN` | deploy | A Vercel API token, scoped to the owning team. See the note on expiry below |
-| `CAIRN_DATABASE_URL` | deploy | The pooled connection, as `cairn_app`, port 6543 |
+| `CAIRN_DATABASE_URL` | deploy | The pooled connection as `cairn_app`, port 6543. Built with `npm run db:app-url` after the migration, see below |
 | `CAIRN_SUPABASE_URL` | deploy | The Supabase project URL |
 | `CAIRN_SUPABASE_ANON_KEY` | deploy | The **publishable** key, beginning `sb_publishable_` |
 | `CAIRN_ANTHROPIC_API_KEY` | deploy | Optional. Facilitated reviews only |
@@ -220,6 +220,47 @@ because it runs the row level security suite that Vercel does not, and keep the
 migrate workflow, because Vercel never touches the schema. The trade is that
 Vercel deploys whether or not the tests pass, while this pipeline will not.
 
+**The order matters, because one secret does not exist yet.** `CAIRN_DATABASE_URL`
+names the `cairn_app` role, and that role is created by the migration. So the
+secrets go in two passes:
+
+*First pass, then run `Migrate the Cairn database`:*
+
+- `CAIRN_DIRECT_URL`, the owner connection, copied from Supabase under Connect
+- `CAIRN_APP_DB_PASSWORD`, a password you invent for `cairn_app`
+
+That run creates the role, gives it that password, and asserts it cannot bypass
+row level security.
+
+*Second pass, then run `Deploy Cairn to Vercel`:*
+
+- `CAIRN_DATABASE_URL`, which you can now build, plus `VERCEL_TOKEN`,
+  `CAIRN_SUPABASE_URL`, `CAIRN_SUPABASE_ANON_KEY` and the two optional ones
+
+**Building `CAIRN_DATABASE_URL`.** It is a transform of the string Supabase
+gives you, not a value you can copy. Supabase hands you the pooler connection
+as the `postgres` owner; the app must connect as `cairn_app`. On the pooler the
+project reference lives in the username, so `postgres.abcdefgh` becomes
+`cairn_app.abcdefgh`, and only the role part changes. Rather than assembling
+that by hand:
+
+```bash
+cd cairn
+npm run db:app-url -- "<pooler url from Supabase>" "<your app password>" --verify
+```
+
+It prints the finished `CAIRN_DATABASE_URL`, and with `--verify` it connects,
+reports which role it reached, refuses if that role can bypass row level
+security, and confirms the method is seeded. It exits non-zero when anything is
+wrong, so a bad string fails here rather than after a deploy.
+
+Take the **transaction pooler** string, on port 6543, not the direct connection.
+A serverless runtime opens a connection per invocation and will exhaust the
+direct limit. The app already sets `prepare: false` for it, and sets the member
+scope transaction-locally, which is what makes transaction pooling safe: the
+scope is bound to the transaction and released with it, so a pooled connection
+never carries one request's identity into another's.
+
 Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`.
 
 Every step of both workflows was rehearsed locally against a real Postgres
@@ -247,6 +288,7 @@ schedules to add when phase 6 lands.
 npm run typecheck        # strict, no any in lib/
 npm run check:literals   # no seeded threshold, domain list or prompt in application code
 npm test                 # method, rules, RLS and screen queries
+npm run db:app-url       # build and check the application's connection string
 ```
 
 `npm test` runs the full suite when `DATABASE_URL` and `DIRECT_URL` point at a
