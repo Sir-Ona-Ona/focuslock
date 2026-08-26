@@ -39,7 +39,11 @@ export interface Viewer {
  * through it. Which member is chosen is the only new question, and the answer
  * is a cookie the person sets by switching.
  *
- * This is the only place an auth identity becomes a member id.
+ * This is the only place an auth identity becomes a member id, and it is the
+ * one read that cannot go through row level security. Every policy resolves
+ * through app.member_id(), and this query is what produces app.member_id(), so
+ * reading member directly returns nothing however many rows exist. It goes
+ * through app.memberships instead, which filters on user_id and nothing else.
  */
 export const currentViewer = cache(async (): Promise<Viewer | null> => {
   const supabase = await supabaseServer();
@@ -48,17 +52,9 @@ export const currentViewer = cache(async (): Promise<Viewer | null> => {
   if (!userId) return null;
 
   const rows = (await db().execute(sql`
-    select m.id, m.household_id, m.display_name, m.role, m.seat_no,
-           m.private_read_opt_in, m.private_disclosure_seen_at, m.joined_at,
-           h.name as household_name,
-           (select t.id from track t
-             where t.owner_member_id = m.id and t.kind = 'individual') as track_id
-      from member m
-      join household h on h.id = m.household_id
-     where m.user_id = ${userId}::uuid
-       and m.deleted_at is null
-       and h.deleted_at is null
-     order by m.joined_at nulls last, h.created_at`)) as unknown as Array<{
+    select id, household_id, display_name, role, seat_no,
+           private_read_opt_in, private_disclosure_seen_at, household_name, track_id
+      from app.memberships(${userId}::uuid)`)) as unknown as Array<{
       id: string; household_id: string; display_name: string;
       role: 'principal' | 'dependent' | 'advisor'; seat_no: number;
       private_read_opt_in: boolean; private_disclosure_seen_at: string | null;

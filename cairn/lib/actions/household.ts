@@ -5,6 +5,7 @@ import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db/client';
+import { dbMessage } from '@/lib/db/error';
 import { supabaseServer } from '@/lib/supabase/server';
 import { HOUSEHOLD_COOKIE, currentViewer } from '@/lib/auth/session';
 
@@ -43,24 +44,30 @@ export async function createHousehold(raw: z.input<typeof input>): Promise<Resul
   }
 
   try {
-    const rows = (await db().execute(sql`
-      select h.id as household_id
-        from app.bootstrap_household(
-          ${user.id}::uuid, ${parsed.data.householdName}, ${parsed.data.displayName},
-          ${parsed.data.partnerName}, ${parsed.data.partnerEmail}) as member_id
-        join member m on m.id = member_id
-        join household h on h.id = m.household_id`)) as unknown as
-      Array<{ household_id: string }>;
+    const created = (await db().execute(sql`
+      select app.bootstrap_household(
+        ${user.id}::uuid, ${parsed.data.householdName}, ${parsed.data.displayName},
+        ${parsed.data.partnerName}, ${parsed.data.partnerEmail}) as member_id`)) as unknown as
+      Array<{ member_id: string }>;
 
-    // Land in the household just created rather than whichever one sorts first.
-    if (rows[0]) await setHouseholdCookie(rows[0].household_id);
+    // A second statement rather than a join, for two reasons. Reading member
+    // here would go through row level security with no scope set and return
+    // nothing. And app.memberships is stable, so inside one statement it would
+    // read the snapshot taken before the row was inserted and still find
+    // nothing, which would look like the same bug wearing a different hat.
+    const memberId = created[0]?.member_id;
+    if (memberId) {
+      const rows = (await db().execute(sql`
+        select household_id from app.memberships(${user.id}::uuid)
+         where id = ${memberId}::uuid`)) as unknown as Array<{ household_id: string }>;
+      // Land in the household just created rather than whichever one sorts first.
+      if (rows[0]) await setHouseholdCookie(rows[0].household_id);
+    }
+
     revalidatePath('/', 'layout');
     return { ok: true };
   } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : 'The household was not created.',
-    };
+    return { ok: false, error: dbMessage(e, 'The household was not created.') };
   }
 }
 
@@ -73,18 +80,24 @@ export async function claimInvite(): Promise<Result> {
 
   // Claims every invitation waiting on this address, so someone invited to two
   // households joins both rather than guessing which one a single claim took.
-  const rows = (await db().execute(sql`
-    select member_id from app.claim_invite(${user.id}::uuid, ${user.email}) as member_id`)) as
-    unknown as Array<{ member_id: string }>;
+  try {
+    const rows = (await db().execute(sql`
+      select member_id from app.claim_invite(${user.id}::uuid, ${user.email}) as member_id`)) as
+      unknown as Array<{ member_id: string }>;
 
-  if (rows.length === 0) {
-    return {
-      ok: false,
-      error: 'No invitation is waiting for this email address.',
-    };
+    if (rows.length === 0) {
+      return {
+        ok: false,
+        error: 'No invitation is waiting for this email address.',
+      };
+    }
+    revalidatePath('/', 'layout');
+    return { ok: true };
+  } catch (e) {
+    // Reaches the constraint that stops one person holding two seats in a
+    // household, among others. Say which, rather than failing the action.
+    return { ok: false, error: dbMessage(e, 'The invitation was not claimed.') };
   }
-  revalidatePath('/', 'layout');
-  return { ok: true };
 }
 
 async function setHouseholdCookie(householdId: string): Promise<void> {
