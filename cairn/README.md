@@ -209,8 +209,15 @@ a value the way you choose a password, and it becomes real the moment something
 uses it. Generate them rather than typing something memorable:
 
 ```bash
-openssl rand -base64 32          # or: node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+openssl rand -hex 32
 ```
+
+Hex on purpose, not base64. A base64 password contains `/`, `+` and `=`, all of
+which a URL treats as syntax, so it has to be percent encoded before it can go
+into a connection string. Hex is only `0` to `9` and `a` to `f`, so the string
+can be assembled by hand with nothing to get wrong. `npm run db:url` encodes
+either correctly, but the password that needs no encoding is the one that cannot
+be pasted wrongly at two in the morning.
 
 `CAIRN_APP_DB_PASSWORD` becomes real during the migration, at the step that runs
 `alter role cairn_app with login password ...`. Before that run, `cairn_app`
