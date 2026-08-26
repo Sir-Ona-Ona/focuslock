@@ -14,6 +14,7 @@
  * Add --verify to connect and confirm the role is real and correctly scoped.
  */
 import postgres from 'postgres';
+import { explainConnectionError } from './connection-error';
 
 interface Built {
   url: string;
@@ -140,7 +141,7 @@ async function main(): Promise<void> {
 
 if (process.argv[1]?.endsWith('app-url.ts')) {
   main().catch((e) => {
-    console.error(`\n${e instanceof Error ? e.message : e}`);
+    console.error(`\n${explainConnectionError(e, 'DATABASE_URL')}`);
     process.exit(1);
   });
 }

@@ -196,7 +196,7 @@ Vercel dashboard.
 | `CAIRN_SUPABASE_ANON_KEY` | deploy | The **publishable** key, beginning `sb_publishable_` |
 | `CAIRN_ANTHROPIC_API_KEY` | deploy | Optional. Facilitated reviews only |
 | `CAIRN_CRON_SECRET` | deploy | Optional until phase 6 |
-| `CAIRN_DIRECT_URL` | migrate | The owner connection, port 5432. Never goes to Vercel |
+| `CAIRN_DIRECT_URL` | migrate | The **session pooler** as `postgres`, port 5432. Not the direct `db.*.supabase.co` host, see below. Never goes to Vercel |
 | `CAIRN_APP_DB_PASSWORD` | migrate | The password to give `cairn_app`. Any characters are fine |
 
 Two optional entries go on the **Variables** tab of that same page rather than
@@ -226,7 +226,7 @@ secrets go in two passes:
 
 *First pass, then run `Migrate the Cairn database`:*
 
-- `CAIRN_DIRECT_URL`, the owner connection, copied from Supabase under Connect
+- `CAIRN_DIRECT_URL`, the **session pooler** string from Supabase under Connect
 - `CAIRN_APP_DB_PASSWORD`, a password you invent for `cairn_app`
 
 That run creates the role, gives it that password, and asserts it cannot bypass
@@ -236,6 +236,27 @@ row level security.
 
 - `CAIRN_DATABASE_URL`, which you can now build, plus `VERCEL_TOKEN`,
   `CAIRN_SUPABASE_URL`, `CAIRN_SUPABASE_ANON_KEY` and the two optional ones
+
+**Both connection strings come from the pooler, not the direct host.** Supabase's
+direct connection, `db.PROJECT.supabase.co`, answers only over IPv6. GitHub
+runners are IPv4 only, so a migration pointed at it fails with `ENETUNREACH`
+against a resolved address, which reads like a firewall or a wrong password and
+is neither. Both scripts now detect that case and say so.
+
+Press **Connect** in the Supabase dashboard and take two strings from the same
+`aws-0-REGION.pooler.supabase.com` host:
+
+| For | Mode | Port |
+|-----|------|------|
+| `CAIRN_DIRECT_URL` | Session pooler | 5432 |
+| `CAIRN_DATABASE_URL` | Transaction pooler | 6543 |
+
+Session mode holds a real connection for the length of the session, so
+migrations, DDL and `CREATE ROLE` behave exactly as they would on a direct
+connection. Transaction mode returns the connection at every commit, which is
+what a serverless runtime needs.
+
+Both put the project reference in the username, as `postgres.PROJECTREF`.
 
 **Building `CAIRN_DATABASE_URL`.** It is a transform of the string Supabase
 gives you, not a value you can copy. Supabase hands you the pooler connection

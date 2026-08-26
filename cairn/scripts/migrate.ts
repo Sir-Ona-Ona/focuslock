@@ -7,6 +7,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import postgres from 'postgres';
 import { seedCanonicalMethod } from '../lib/method/seed';
+import { explainConnectionError } from './connection-error';
 
 const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 if (!url) {
@@ -50,7 +51,7 @@ async function main() {
 main()
   .then(() => sql.end())
   .catch(async (err) => {
-    console.error(err);
-    await sql.end();
+    console.error(`\n${explainConnectionError(err, 'DIRECT_URL')}`);
+    await sql.end().catch(() => {});
     process.exit(1);
   });
