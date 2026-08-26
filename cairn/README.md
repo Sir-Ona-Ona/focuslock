@@ -142,38 +142,44 @@ met.
 
 In Supabase, Authentication, URL Configuration, set the Site URL to the Vercel
 domain and add `https://YOUR-DOMAIN/auth/callback` to the redirect allow list.
-There is no OAuth provider to configure. There is a mail service to configure,
-and it is the next step rather than an optional one.
+There is no OAuth provider to configure.
 
-### 7. Connect an SMTP provider
+### 7. Create the two accounts
 
-Do this before you invite anyone. It is not a hardening step.
+Cairn sends no email of its own. An invitation is a member row waiting on an
+address, and the second principal claims it by signing in with that address, so
+nothing has to be delivered for two people to end up in the same household. The
+only email in the system is the sign in code, and there are two ways past it.
 
-Sign in is an email one time code, and an invitation reaches the second person
-as an email. That makes delivery the whole product, not a detail of it. Supabase
-ships with a built in mail service that exists so a developer can see the flow
-work once. It sends a small number of messages an hour across the entire
-project, it will only send to addresses on your own team, and Supabase does not
-promise delivery. Two people signing in on the same evening can exhaust it. When
-it refuses, the sign in screen says the limit is used up, because the
-application never got to send anything.
+**Create the accounts directly.** In Supabase, Authentication, Users, Add user,
+Create new user. Give each person their address and a password, and leave Auto
+Confirm User on: without it the account exists but cannot sign in. This sends no
+email at all. Both people then sign in with a password on the sign in screen,
+which is the default there.
 
-In the Supabase dashboard, Authentication, Emails, SMTP Settings, enable custom
-SMTP and give it a provider. Resend, Postmark, SendGrid, or Amazon SES all work
-and all have a free tier that comfortably covers a household. The sender address
-has to be on a domain the provider has verified, otherwise the mail is accepted
-and then dropped by the receiving side. Once custom SMTP is on, the hourly cap
-becomes whatever your provider allows, and mail goes to any address rather than
-only your team.
+Set the passwords somewhere the two of you already share credentials. They can
+be changed later in the same screen.
 
-Then send yourself a code from the deployed site and confirm it arrives. A
-delivery path that has never delivered is not yet a delivery path.
+**Or connect an SMTP provider,** if you would rather nobody handled a password.
+Supabase's built in mail service will not do: it sends a few messages an hour
+across the whole project, only to addresses on your own Supabase team, with no
+delivery guarantee, which is enough to see the flow work once and not enough to
+run a household. Resend, Postmark, SendGrid and Amazon SES all have a free tier
+that covers two people many times over. Enable custom SMTP under Authentication,
+Emails, SMTP Settings. The sender address has to be on a domain the provider has
+verified, or the mail is accepted and then dropped by the receiving side. Send
+yourself one code afterwards and confirm it arrives, because a delivery path
+that has never delivered is not yet a delivery path.
+
+The sign in screen offers both, and the emailed code stays available whichever
+you choose.
 
 ### 8. Deploy, then claim
 
-Redeploy so the environment is picked up. Open the site, sign in with your
-email, and create the household. Your partner signs in with the address you
-gave and claims their own track.
+Redeploy so the environment is picked up. Open the site and sign in as the
+first principal, then create the household, naming the other principal and the
+address their account uses. That address is what the claim matches on, so it has
+to be the one they sign in with. They sign in and claim their own track.
 
 ### Deploying from GitHub Actions instead
 
