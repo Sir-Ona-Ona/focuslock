@@ -3,6 +3,32 @@
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
+/**
+ * Turns an auth failure into something the person reading it can act on.
+ *
+ * The one that will actually happen is the email rate limit. Supabase's built in
+ * mail service is for development: a handful of messages an hour, no delivery
+ * guarantee, and it is not meant to carry a real sign in. Hitting it looks like
+ * the application is broken when the application never sent anything.
+ */
+function explainAuthError(message: string): string {
+  if (/rate limit/i.test(message)) {
+    return 'The email service refused to send: its hourly limit is used up. Supabase ships '
+      + 'with a development mail service that sends only a few messages an hour and is not '
+      + 'meant for real use. Connect an SMTP provider under Authentication, Emails in the '
+      + 'Supabase dashboard, and this stops happening. Until then the limit resets within '
+      + 'the hour.';
+  }
+  if (/invalid|expired/i.test(message) && /token|otp|code/i.test(message)) {
+    return 'That code is wrong or has expired. Codes last an hour. Ask for a new one.';
+  }
+  if (/signups not allowed|not allowed for otp/i.test(message)) {
+    return 'This address cannot be signed in. If email signups are disabled in Supabase, '
+      + 'the account has to be invited first.';
+  }
+  return message;
+}
+
 /** Email one time code. No passwords in v1. */
 export function SignInForm() {
   const [email, setEmail] = useState('');
@@ -20,7 +46,7 @@ export function SignInForm() {
       options: { shouldCreateUser: true },
     });
     setBusy(false);
-    if (err) setError(err.message);
+    if (err) setError(explainAuthError(err.message));
     else setStage('code');
   }
 
@@ -32,7 +58,7 @@ export function SignInForm() {
       email, token: code, type: 'email',
     });
     setBusy(false);
-    if (err) setError(err.message);
+    if (err) setError(explainAuthError(err.message));
     else window.location.assign('/');
   }
 

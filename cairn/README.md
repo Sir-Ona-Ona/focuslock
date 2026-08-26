@@ -142,9 +142,34 @@ met.
 
 In Supabase, Authentication, URL Configuration, set the Site URL to the Vercel
 domain and add `https://YOUR-DOMAIN/auth/callback` to the redirect allow list.
-Sign in is an email one time code, so no other provider setup is needed.
+There is no OAuth provider to configure. There is a mail service to configure,
+and it is the next step rather than an optional one.
 
-### 7. Deploy, then claim
+### 7. Connect an SMTP provider
+
+Do this before you invite anyone. It is not a hardening step.
+
+Sign in is an email one time code, and an invitation reaches the second person
+as an email. That makes delivery the whole product, not a detail of it. Supabase
+ships with a built in mail service that exists so a developer can see the flow
+work once. It sends a small number of messages an hour across the entire
+project, it will only send to addresses on your own team, and Supabase does not
+promise delivery. Two people signing in on the same evening can exhaust it. When
+it refuses, the sign in screen says the limit is used up, because the
+application never got to send anything.
+
+In the Supabase dashboard, Authentication, Emails, SMTP Settings, enable custom
+SMTP and give it a provider. Resend, Postmark, SendGrid, or Amazon SES all work
+and all have a free tier that comfortably covers a household. The sender address
+has to be on a domain the provider has verified, otherwise the mail is accepted
+and then dropped by the receiving side. Once custom SMTP is on, the hourly cap
+becomes whatever your provider allows, and mail goes to any address rather than
+only your team.
+
+Then send yourself a code from the deployed site and confirm it arrives. A
+delivery path that has never delivered is not yet a delivery path.
+
+### 8. Deploy, then claim
 
 Redeploy so the environment is picked up. Open the site, sign in with your
 email, and create the household. Your partner signs in with the address you
