@@ -188,16 +188,40 @@ values into the Vercel project itself, so there is nothing to type into the
 Vercel dashboard.
 
 
-| Secret | Used by | What |
-|--------|---------|------|
-| `VERCEL_TOKEN` | deploy | A Vercel API token, scoped to the owning team. See the note on expiry below |
-| `CAIRN_DATABASE_URL` | deploy | The pooled connection as `cairn_app`, port 6543. Built with `npm run db:app-url` after the migration, see below |
-| `CAIRN_SUPABASE_URL` | deploy | The Supabase project URL |
-| `CAIRN_SUPABASE_ANON_KEY` | deploy | The **publishable** key, beginning `sb_publishable_` |
-| `CAIRN_ANTHROPIC_API_KEY` | deploy | Optional. Facilitated reviews only |
-| `CAIRN_CRON_SECRET` | deploy | Optional until phase 6 |
-| `CAIRN_DIRECT_URL` | migrate | The **session pooler** as `postgres`, port 5432. Not the direct `db.*.supabase.co` host, see below. Never goes to Vercel |
-| `CAIRN_APP_DB_PASSWORD` | migrate | The password to give `cairn_app`. Any characters are fine |
+Three of these are copied from a dashboard, two you invent, two are built by a
+script, and one comes from Anthropic. Knowing which is which saves hunting for a
+page that does not exist.
+
+| Secret | Where it comes from | Used by |
+|--------|--------------------|---------|
+| `VERCEL_TOKEN` | Copy: vercel.com/account/tokens. Scope it, set an expiry | deploy |
+| `CAIRN_SUPABASE_URL` | Copy: the Supabase project URL | deploy |
+| `CAIRN_SUPABASE_ANON_KEY` | Copy: the **publishable** key, beginning `sb_publishable_` | deploy |
+| `CAIRN_ANTHROPIC_API_KEY` | Copy: console.anthropic.com. Optional, reviews only | deploy |
+| `CAIRN_APP_DB_PASSWORD` | **Invent it.** See below | migrate |
+| `CAIRN_CRON_SECRET` | **Invent it.** Optional until phase 6 | deploy |
+| `CAIRN_DIRECT_URL` | Build: `npm run db:url ... --direct`. Never goes to Vercel | migrate |
+| `CAIRN_DATABASE_URL` | Build: `npm run db:url ...`, after the migration | deploy |
+
+**The two you invent.** `CAIRN_APP_DB_PASSWORD` and `CAIRN_CRON_SECRET` are not
+looked up anywhere. There is no page, no button, nothing to retrieve: you choose
+a value the way you choose a password, and it becomes real the moment something
+uses it. Generate them rather than typing something memorable:
+
+```bash
+openssl rand -base64 32          # or: node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+`CAIRN_APP_DB_PASSWORD` becomes real during the migration, at the step that runs
+`alter role cairn_app with login password ...`. Before that run, `cairn_app`
+exists in no database and the password is just a string you have written down.
+After it, it is the credential the deployed app authenticates with, which is why
+the same value goes into `CAIRN_DATABASE_URL`.
+
+It exists at all because the app must not connect as `postgres`. That role can
+bypass row level security, and row level security is what enforces every privacy
+and authorship rule in Cairn. So the app gets its own role, and its own role
+needs its own password.
 
 Two optional entries go on the **Variables** tab of that same page rather than
 the Secrets tab, because neither is secret: `VERCEL_PROJECT_NAME` if you want
@@ -227,7 +251,7 @@ secrets go in two passes:
 *First pass, then run `Migrate the Cairn database`:*
 
 - `CAIRN_DIRECT_URL`, the **session pooler** string from Supabase under Connect
-- `CAIRN_APP_DB_PASSWORD`, a password you invent for `cairn_app`
+- `CAIRN_APP_DB_PASSWORD`, a password you invent, generated as above
 
 That run creates the role, gives it that password, and asserts it cannot bypass
 row level security.
