@@ -11,6 +11,7 @@ import { proposedCycles } from '@/lib/rules/agreement';
 import { method } from '@/lib/method/accessor';
 import { Nav, type NavGroup } from '@/components/ui/Nav';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { SignOut } from '@/components/ui/SignOut';
 import { HouseholdSwitcher } from '@/components/ui/HouseholdSwitcher';
 import { trackToken } from '@/components/ui/vocab';
 
@@ -167,6 +168,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               currentHouseholdId={viewer.householdId}
             />
             <ThemeToggle />
+            <SignOut />
           </div>
         </div>
         <main className="min-w-0 flex-1 px-4 pb-16 pt-6 md:px-7">{children}</main>

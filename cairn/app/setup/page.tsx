@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentViewer } from '@/lib/auth/session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { SetupForm } from './SetupForm';
+import { SignOut } from '@/components/ui/SignOut';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,11 +33,17 @@ export default async function SetupPage() {
       <div className="mt-6">
         <SetupForm email={data.user.email ?? ''} />
       </div>
-      {viewer ? (
-        <a href="/" className="mt-4 inline-block text-[.82rem] underline decoration-rule-strong">
-          Back to {viewer.householdName}
-        </a>
-      ) : null}
+      <div className="mt-6 flex items-center gap-3">
+        {viewer ? (
+          <a href="/" className="text-[.82rem] underline decoration-rule-strong">
+            Back to {viewer.householdName}
+          </a>
+        ) : null}
+        {/* The way out for someone signed in as the wrong account. Without it
+            this screen is a dead end: no household to enter and no way to
+            leave. */}
+        <SignOut label={`Sign out of ${data.user.email ?? 'this account'}`} />
+      </div>
     </main>
   );
 }
