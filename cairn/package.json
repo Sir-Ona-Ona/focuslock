@@ -12,7 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "tsx scripts/migrate.ts",
     "check:literals": "tsx scripts/check-literals.ts",
-    "db:app-url": "tsx scripts/app-url.ts"
+    "db:url": "tsx scripts/db-url.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

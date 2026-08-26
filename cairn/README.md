@@ -258,29 +258,40 @@ what a serverless runtime needs.
 
 Both put the project reference in the username, as `postgres.PROJECTREF`.
 
-**Building `CAIRN_DATABASE_URL`.** It is a transform of the string Supabase
-gives you, not a value you can copy. Supabase hands you the pooler connection
-as the `postgres` owner; the app must connect as `cairn_app`. On the pooler the
-project reference lives in the username, so `postgres.abcdefgh` becomes
-`cairn_app.abcdefgh`, and only the role part changes. Rather than assembling
-that by hand:
+**Building both connection strings.** Supabase gives you a string with
+`[YOUR-PASSWORD]` in it. Substituting that by hand is where two silent mistakes
+live: a password containing `@`, `#`, `/` or `?` breaks the URL with no error at
+all, and the application string additionally has to name `cairn_app` rather than
+the owner. So build them:
 
 ```bash
 cd cairn
-npm run db:app-url -- "<pooler url from Supabase>" "<your app password>" --verify
+
+# CAIRN_DIRECT_URL, before the migration
+npm run db:url -- "<session pooler url>" "<your database password>" --direct
+
+# CAIRN_DATABASE_URL, after it
+npm run db:url -- "<transaction pooler url>" "<your app password>"
 ```
 
-It prints the finished `CAIRN_DATABASE_URL`, and with `--verify` it connects,
-reports which role it reached, refuses if that role can bypass row level
-security, and confirms the method is seeded. It exits non-zero when anything is
-wrong, so a bad string fails here rather than after a deploy.
+Paste each Supabase string exactly as shown, `[YOUR-PASSWORD]` included; the
+password argument replaces it and is percent encoded properly. The script warns
+if you have taken the wrong pooler mode for the job, or the IPv6-only direct
+host, and rewrites the role for the application string so `postgres.abcdefgh`
+becomes `cairn_app.abcdefgh`.
 
-Take the **transaction pooler** string, on port 6543, not the direct connection.
-A serverless runtime opens a connection per invocation and will exhaust the
-direct limit. The app already sets `prepare: false` for it, and sets the member
-scope transaction-locally, which is what makes transaction pooling safe: the
-scope is bound to the transaction and released with it, so a pooled connection
-never carries one request's identity into another's.
+Add `--verify` to connect and see what the string actually reaches. For the
+application string it refuses outright if that role can bypass row level
+security. For the owner string it expects the opposite, and says so.
+
+Note which password goes where. The **database password** is the one you set
+when creating the Supabase project, and it belongs to `postgres`, so it goes in
+`CAIRN_DIRECT_URL`. The **app password** is one you invent, is the value of
+`CAIRN_APP_DB_PASSWORD`, and belongs to `cairn_app`, so it goes in
+`CAIRN_DATABASE_URL`. They are different passwords for different roles.
+
+If you have lost the database password, reset it under Settings, Database,
+Database password. Nothing in Cairn stores it.
 
 Run `Migrate the Cairn database` first, then `Deploy Cairn to Vercel`.
 
@@ -309,7 +320,7 @@ schedules to add when phase 6 lands.
 npm run typecheck        # strict, no any in lib/
 npm run check:literals   # no seeded threshold, domain list or prompt in application code
 npm test                 # method, rules, RLS and screen queries
-npm run db:app-url       # build and check the application's connection string
+npm run db:url           # build and check either database connection string
 ```
 
 `npm test` runs the full suite when `DATABASE_URL` and `DIRECT_URL` point at a
